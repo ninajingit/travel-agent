@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   integer,
   pgEnum,
@@ -78,4 +79,22 @@ export const tripSegments = pgTable("trip_segments", {
   departAt: timestamp("depart_at", { withTimezone: true }).notNull(),
   arriveAt: timestamp("arrive_at", { withTimezone: true }).notNull(),
   status: segmentStatus("status").notNull().default("scheduled"),
+});
+
+export const channelKind = pgEnum("channel_kind", ["web", "whatsapp", "imessage"]);
+
+// How much rope the agent has. The caps are the most Passage may spend on a
+// person's behalf without asking them first; they are the traveller's own
+// limits on the agent. One row per user, created with defaults on first read.
+export const agentSettings = pgTable("agent_settings", {
+  userId: integer("user_id")
+    .primaryKey()
+    .references(() => users.id),
+  autoRebook: boolean("auto_rebook").notNull().default(false),
+  perBookingCapCents: integer("per_booking_cap_cents").notNull().default(50_000),
+  monthlyCapCents: integer("monthly_cap_cents").notNull().default(200_000),
+  allowedChannels: channelKind("allowed_channels")
+    .array()
+    .notNull()
+    .default(["web"]),
 });

@@ -8,7 +8,13 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { destinations, tripSegments, trips, users } from "@/db/schema";
+import {
+  agentSettings,
+  destinations,
+  tripSegments,
+  trips,
+  users,
+} from "@/db/schema";
 
 async function seedUser(email: string) {
   const clerk = await clerkClient();
@@ -175,6 +181,21 @@ async function seedTrips(
   return rows;
 }
 
+// The demo account lets the agent rebook on its own. Only written once so a
+// reseed never undoes what someone changed on the settings page.
+async function seedAgentSettings(userId: number) {
+  await db
+    .insert(agentSettings)
+    .values({
+      userId,
+      autoRebook: true,
+      perBookingCapCents: 75_000,
+      monthlyCapCents: 300_000,
+      allowedChannels: ["web"],
+    })
+    .onConflictDoNothing();
+}
+
 async function main() {
   const email = process.env.SEED_EMAIL;
   if (!email) {
@@ -189,6 +210,9 @@ async function main() {
 
   const tripRows = await seedTrips(user.id, places);
   console.log(`trips         ${tripRows.map((t) => t.id).join(", ")}`);
+
+  await seedAgentSettings(user.id);
+  console.log(`settings      ok`);
 }
 
 main().catch((error) => {
