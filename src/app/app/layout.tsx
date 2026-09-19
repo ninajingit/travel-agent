@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
             Passage
           </Link>
           <nav className="flex gap-4 text-sm text-zinc-600 dark:text-zinc-400">
+            <Link href="/app/trips">Trips</Link>
             <Link href="/app/destinations">Destinations</Link>
           </nav>
         </div>
