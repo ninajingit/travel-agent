@@ -110,3 +110,21 @@ export function formatRelative(value: Date | string, now = new Date()) {
   if (days < 7) return `${days}d ago`;
   return day.format(date);
 }
+
+// "In 25 days", "Day 3 of 9", "Ended". For the Coming up cards.
+export function formatCountdown(startsAt: string, endsAt: string, today = new Date()) {
+  const start = new Date(`${startsAt}T00:00:00Z`).getTime();
+  const end = new Date(`${endsAt}T00:00:00Z`).getTime();
+  const now = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const dayMs = 86_400_000;
+  if (now < start) {
+    const days = Math.round((start - now) / dayMs);
+    return days === 1 ? "Tomorrow" : `In ${days} days`;
+  }
+  if (now <= end) {
+    const dayNumber = Math.round((now - start) / dayMs) + 1;
+    const total = Math.round((end - start) / dayMs) + 1;
+    return `Day ${dayNumber} of ${total}`;
+  }
+  return "Ended";
+}

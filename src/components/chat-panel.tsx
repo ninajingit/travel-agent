@@ -18,7 +18,8 @@ export type ChatMessage = {
 const STARTERS = [
   "Plan a long weekend under $3,000",
   "Book the Lisbon flights",
-  "Is my flight home delayed?",
+  "Are there any earlier flights I can get on standby?",
+  "How much is it to change my flights and hotel to come home a day later?",
   "What should I do near the hotel tonight?",
 ];
 

@@ -3,7 +3,15 @@
 // and answers with canned text in the agent's voice. Good enough to read
 // convincingly for a couple of minutes, which is what Stage 1 needs.
 
-export type Intent = "plan" | "book" | "confirm" | "delay" | "inspire" | "unknown";
+export type Intent =
+  | "plan"
+  | "book"
+  | "standby"
+  | "change"
+  | "confirm"
+  | "delay"
+  | "inspire"
+  | "unknown";
 
 export type Turn = { role: "user" | "agent"; body: string };
 
@@ -19,10 +27,16 @@ export function detectIntent(message: string, history: Turn[]): Intent {
   if (YES.test(text) && lastAgent && /want me to book|say yes/i.test(lastAgent.body)) {
     return "confirm";
   }
+  if (/\b(standby|earlier flight|earlier flights|get home earlier|earlier)\b/.test(text)) {
+    return "standby";
+  }
+  if (/\b(day later|come home later|extend|change my flight|change my flights|stay longer|one more night)\b/.test(text)) {
+    return "change";
+  }
   if (/\b(delay|delayed|late|cancel|cancelled|gate|on time|status|rebook)\b/.test(text)) {
     return "delay";
   }
-  if (/\b(book|flight|flights|hold|reserve|hotel|seat|fare)\b/.test(text)) {
+  if (/\b(book|flight|flights|hold|reserve|seat|fare)\b/.test(text)) {
     return "book";
   }
   if (/\b(plan|weekend|trip|ideas|where should|options|under \$|budget)\b/.test(text)) {
@@ -36,10 +50,10 @@ export function detectIntent(message: string, history: Turn[]): Intent {
 
 export function reply(message: string, history: Turn[]): Reply {
   const intent = detectIntent(message, history);
-  return { intent, body: SCRIPT[intent](message) };
+  return { intent, body: SCRIPT[intent](message, history) };
 }
 
-const SCRIPT: Record<Intent, (message: string) => string> = {
+const SCRIPT: Record<Intent, (message: string, history: Turn[]) => string> = {
   plan: () =>
     [
       "Three ways to do it, assuming two people out of Newark:",
@@ -58,12 +72,48 @@ const SCRIPT: Record<Intent, (message: string) => string> = {
       "That is under your per-booking cap, so I can do it without a second check. Want me to book it? Say yes and it is done.",
     ].join("\n"),
 
-  confirm: () =>
+  standby: () =>
     [
+      "Two earlier options home from Tokyo on Sep 25, both nonstop to Chicago:",
+      "",
+      "- NH 12 at 06:35, landing 04:20 the same morning local time. Standby is free on your fare; you would know by 05:30 at the gate, and the flight is showing 9 open seats.",
+      "- JL 10 at 11:05, landing 08:55. A confirmed seat, not standby, is $180 as a same-day change.",
+      "",
+      "Nothing is changed yet. Want me to list you for standby on NH 12? Say yes and you keep your NH 10 seat as the fallback.",
+    ].join("\n"),
+
+  change: () =>
+    [
+      "To come home Sep 26 instead of Sep 25:",
+      "",
+      "- Flight: NH 10 on Sep 26 has seats. Fare difference $142, no change fee on your ticket.",
+      "- Hotel: Hotel Niwa has your room for one more night at ¥31,000, about $208. Late checkout on the 26th is included.",
+      "",
+      "Total about $350. That is under your per-booking cap. Nothing is changed yet. Want me to book it? Say yes and it is done.",
+    ].join("\n"),
+
+  confirm: (_message, history) => {
+    const offer = [...history].reverse().find((t) => t.role === "agent")?.body ?? "";
+    if (/standby/i.test(offer)) {
+      return [
+        "You are listed for standby on NH 12 at 06:35, priority group 2. Your NH 10 seat stays confirmed as the fallback.",
+        "",
+        "Be at gate 62 by 05:30. I will message you the moment ANA clears the list, either way.",
+      ].join("\n");
+    }
+    if (/Sep 26/i.test(offer)) {
+      return [
+        "Done. You fly home on NH 10 on Sep 26, same seat class, new confirmation R4TX8L-2. Hotel Niwa is extended to Sep 26 with late checkout.",
+        "",
+        "$350 to your card on file: $142 fare difference and $208 for the room. It will show in your activity within a minute.",
+      ].join("\n");
+    }
+    return [
       "Booked. TP 202 out on Oct 14, TP 201 back on Oct 21, two seats, confirmation K3M9PL. $1,368 to your card on file, and it will show in your activity within a minute.",
       "",
       "Seats 14C and 14D on the way out. I will watch the fare; if it drops on a refundable ticket I rebook and tell you.",
-    ].join("\n"),
+    ].join("\n");
+  },
 
   delay: () =>
     [
@@ -85,8 +135,8 @@ const SCRIPT: Record<Intent, (message: string) => string> = {
 
   unknown: () =>
     [
-      "I can help with three things: planning a trip, booking a flight or a room, or something happening on a trip right now, like a delay.",
+      "I can help with three things: planning a trip, booking a flight or a room, or something happening on a trip right now, like getting home earlier or later.",
       "",
-      'Try "plan a long weekend under $3,000", "book the Lisbon flights", or "is my flight delayed?"',
+      'Try "plan a long weekend under $3,000", "book the Lisbon flights", or "are there earlier flights I can get on standby?"',
     ].join("\n"),
 };
