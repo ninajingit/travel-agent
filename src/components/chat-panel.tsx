@@ -15,13 +15,74 @@ export type ChatMessage = {
   createdAt: string | Date;
 };
 
-const STARTERS = [
+// Example requests, typed and erased in the empty composer so a new person
+// sees the range of things to ask without a wall of buttons.
+const EXAMPLES = [
   "Plan a long weekend under $3,000",
   "Book the Lisbon flights",
   "Are there any earlier flights I can get on standby?",
   "How much is it to change my flights and hotel to come home a day later?",
   "What should I do near the hotel tonight?",
+  "Can we squeeze in two nights in Hokkaido?",
+  "Get me an aisle seat on the way back",
+  "It is raining tomorrow, what should I do instead?",
 ];
+
+const TYPE_MS = 38;
+const ERASE_MS = 14;
+const HOLD_MS = 1600;
+const GAP_MS = 500;
+
+// Cycles through EXAMPLES: type it out, hold, erase, next. Off when `active`
+// is false (there is a thread, or the person has started typing) and for
+// people who asked their OS for reduced motion.
+function useTypewriter(active: boolean) {
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    if (!active) {
+      setText("");
+      return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setText(EXAMPLES[0]);
+      return;
+    }
+
+    let index = 0;
+    let length = 0;
+    let erasing = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const step = () => {
+      const example = EXAMPLES[index];
+      if (!erasing) {
+        length += 1;
+        setText(example.slice(0, length));
+        if (length === example.length) {
+          erasing = true;
+          timer = setTimeout(step, HOLD_MS);
+        } else {
+          timer = setTimeout(step, TYPE_MS);
+        }
+      } else {
+        length -= 1;
+        setText(example.slice(0, length));
+        if (length === 0) {
+          erasing = false;
+          index = (index + 1) % EXAMPLES.length;
+          timer = setTimeout(step, GAP_MS);
+        } else {
+          timer = setTimeout(step, ERASE_MS);
+        }
+      }
+    };
+    timer = setTimeout(step, GAP_MS);
+    return () => clearTimeout(timer);
+  }, [active]);
+
+  return text;
+}
 
 export function ChatPanel({
   conversationId,
@@ -40,6 +101,7 @@ export function ChatPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const placeholder = useTypewriter(messages.length === 0 && draft === "");
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "nearest" });
@@ -75,27 +137,7 @@ export function ChatPanel({
 
   return (
     <div className="flex flex-col gap-4">
-      {messages.length === 0 ? (
-        <div className="rounded-card border border-dashed border-border p-6">
-          <p className="text-muted">
-            Ask about a trip you are planning, something to book, or what is
-            happening on a trip right now.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {STARTERS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => send(s)}
-                disabled={busy}
-                className="rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm text-fg transition hover:border-accent disabled:opacity-50"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : (
+      {messages.length === 0 ? null : (
         <ol className={`flex flex-col gap-3 ${compact ? "max-h-[28rem] overflow-y-auto pr-1" : ""}`}>
           {messages.map((m) => (
             <li
@@ -141,7 +183,8 @@ export function ChatPanel({
             }
           }}
           rows={1}
-          placeholder="Message Passage"
+          placeholder={messages.length === 0 ? placeholder || "Message Passage" : "Message Passage"}
+          aria-label="Message Passage"
           className="max-h-40 min-h-[2.75rem] flex-1 resize-none bg-transparent px-2 py-2.5 text-base text-fg outline-none placeholder:text-muted/60"
         />
         <Button type="submit" disabled={busy || draft.trim() === ""}>
