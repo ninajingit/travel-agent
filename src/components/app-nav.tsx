@@ -8,6 +8,7 @@ const items = [
   { href: "/app/chats", label: "Chats" },
   { href: "/app/trips", label: "My Trips" },
   { href: "/app/inspiration", label: "Inspiration" },
+  { href: "/app/activity", label: "Activity" },
 ];
 
 export function AppNav() {

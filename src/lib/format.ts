@@ -128,3 +128,36 @@ export function formatCountdown(startsAt: string, endsAt: string, today = new Da
   }
   return "Ended";
 }
+
+// Money for display. Amounts are stored in cents.
+export function formatMoney(cents: number, currency = "USD") {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+}
+
+const transactionKindLabels = {
+  booking: "Booked",
+  rebooking: "Rebooked",
+  cancellation: "Cancelled",
+} as const;
+
+export function transactionKindLabel(kind: keyof typeof transactionKindLabels) {
+  return transactionKindLabels[kind];
+}
+
+export function transactionKindTone(kind: keyof typeof transactionKindLabels) {
+  switch (kind) {
+    case "booking":
+      return "accent" as const;
+    case "rebooking":
+      return "violet" as const;
+    case "cancellation":
+      return "danger" as const;
+  }
+}
+
+// "September 2026" for a (year, month) pair.
+export function formatMonth(year: number, month: number) {
+  return new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(year, month - 1, 1)),
+  );
+}
