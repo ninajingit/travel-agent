@@ -10,8 +10,8 @@ export default async function SettingsPage() {
     <div className="mx-auto w-full max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Agent settings</h1>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        What Passage may do on its own, and how much it may spend before it
-        has to ask you.
+        What the concierge may do on its own while you travel, and how much it
+        may spend before it has to ask you.
       </p>
       <AgentSettingsForm initial={settings} />
     </div>

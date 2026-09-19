@@ -1,16 +1,17 @@
 # PLAN-STAGE1.md
 
 Stage 1: build the Passage application. No payments, no billing, no
-subscriptions. Commits 1 through 16.
+subscriptions. Commits 1 through 20.
 
-A later stage, run in a separate session, adds Stripe starting at commit 17.
+A later stage, run in a separate session, adds Stripe starting at commit 21.
 That plan is deliberately not in this repo yet. Do not go looking for it and
 do not prepare for it.
 
 ## Scope boundary
 
-**In scope:** authenticated users, destinations, trips, agent configuration,
-a simulated agent chat, and an activity record of what the agent did.
+**In scope:** authenticated users, saved destinations ("Inspiration"),
+trips, agent configuration, a simulated agent chat with history, a chat-first
+home page with trip inspiration, and an activity record of what the agent did.
 
 **Out of scope, and this is the important half:** no plan or tier column, no
 subscriptions table, no Stripe dependency, no upgrade buttons, no paywall, no
@@ -52,11 +53,19 @@ variable.
 | 9 | trip detail: itinerary, segments, status | deep link works |
 | 10 | agent settings schema and page | auto-rebook toggle, per-booking cap, monthly cap, all persist |
 | 11 | channel abstraction plus stub adapters | `web`, `whatsapp`, `imessage` behind one interface |
-| 12 | agent chat panel, web adapter, canned responses | conversation renders, scripted |
-| 13 | `agent_transactions` schema plus write path from chat | booking in chat creates a row |
-| 14 | activity view: this month's agent transactions, running count | count matches rows |
-| 15 | trip monitoring view: delay detected, rebook suggested, rebook accepted | accepting writes a transaction |
-| 16 | landing and pricing pages, static marketing copy only | no auth coupling, nothing functional |
+| 12 | product reframe: copy, "My Trips" and "Inspiration" nav, settings in the account menu | nav and copy in browser |
+| 13 | design system: theme tokens, shared UI primitives, existing screens restyled | every screen in the new look, light and dark |
+| 14 | `conversations` and `messages` schema, seeded chat history | seed idempotent, rows present |
+| 15 | agent chat panel, web adapter, canned responses, persisted, with history | conversation renders, scripted, survives reload |
+| 16 | home: chat composer plus upcoming-trip inspiration, static content | renders for seeded trips |
+| 17 | `agent_transactions` schema plus write path from chat | booking in chat creates a row |
+| 18 | activity view: this month's agent transactions, running count | count matches rows |
+| 19 | trip monitoring view: delay detected, rebook suggested, rebook accepted | accepting writes a transaction |
+| 20 | landing and pricing pages, static marketing copy only | no auth coupling, nothing functional |
+
+Revised after commit 10 (2026-09-19): chat is the core product, so it gets
+persistence and history, the home page becomes chat-first, and the visual
+design lands before the chat UI is built.
 
 ### Notes on specific commits
 
@@ -64,16 +73,18 @@ variable.
 `whatsapp` and `imessage` adapters that throw `NotImplemented`. The
 architecture is visible without building Twilio integration.
 
-**Commit 12.** The chat is scripted. A small set of canned flows: plan a trip,
+**Commit 15.** The chat is scripted. A small set of canned flows: plan a trip,
 book a flight, ask about a delay. It needs to be convincing to a reviewer for
 two minutes, not intelligent.
 
-**Commit 14.** This is the screen that matters most for later. A monthly list
+**Commit 18.** This is the screen that matters most for later. A monthly list
 of agent transactions with a running count. Build it as a plain activity log.
 Do not add any notion of a limit, an allowance, or a remaining balance.
 
-**Commit 16.** Static marketing copy with three tiers written out: Free, Plus
-at $29/mo, Pro at $99/mo, with transaction allowances described in prose. No
+**Commit 20.** Static marketing copy: Free (planning and inspiration), Plus
+at $29/mo (booking and monitoring, with a monthly allowance of agent actions
+described in prose), Pro at $99/mo (proactive concierge, auto-rebook), and a
+Concierge Pass at $100 per trip for people who do not want a membership. No
 database reads, no auth checks, no plan enum, no buttons that do anything.
 Writing the pricing promise before the billing exists is realistic and it
 constrains the later implementation.
@@ -94,6 +105,10 @@ trip_segments       id, trip_id, kind, carrier, ref,
 agent_settings      user_id, auto_rebook, per_booking_cap_cents,
                     monthly_cap_cents, allowed_channels
 
+conversations       id, user_id, trip_id, title, created_at
+
+messages            id, conversation_id, role, body, created_at
+
 agent_transactions  id, user_id, trip_id, kind, amount_cents,
                     currency, description, occurred_at
 ```
@@ -105,8 +120,9 @@ migration against this schema, and that migration is part of the point.
 
 ## Definition of done
 
-A reviewer can sign in, add a destination, see two trips, change agent
-settings, have a scripted conversation that books something, watch a delay
-trigger a rebook, and see all of it in a monthly activity list with a running
-count. Deployed on Vercel. Sixteen commits. Zero mentions of money anywhere
+A reviewer can sign in, save a place under Inspiration, see two trips, change
+agent settings from the account menu, read past chats, have a scripted
+conversation that books something, watch a delay trigger a rebook, and see
+all of it in a monthly activity list with a running count. Deployed on
+Vercel. Twenty commits. Zero mentions of money anywhere
 in the codebase except static copy on the pricing page.

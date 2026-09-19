@@ -9,14 +9,15 @@ export default async function TripsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Trips</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">My Trips</h1>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        Everything Passage has planned or booked for you.
+        Everything planned or booked, and what Passage is watching right now.
       </p>
 
       {rows.length === 0 ? (
         <p className="mt-6 rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-          No trips yet. Add a destination and Passage will start watching fares.
+          No trips yet. Save a place under Inspiration and Passage will start
+          planning around it.
         </p>
       ) : (
         <ul className="mt-6 divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">

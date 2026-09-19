@@ -23,7 +23,7 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
         href="/app/trips"
         className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
       >
-        ← Trips
+        ← My Trips
       </Link>
 
       <div className="mt-3 flex items-start justify-between gap-4">
@@ -48,7 +48,8 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
       </h2>
       {trip.segments.length === 0 ? (
         <p className="mt-2 rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-          Nothing booked yet. Segments appear here as Passage books them.
+          Nothing booked yet. Flights, stays, and trains show up here as
+          Passage books them.
         </p>
       ) : (
         <ol className="mt-2 divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">

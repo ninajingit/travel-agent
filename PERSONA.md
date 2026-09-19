@@ -7,9 +7,22 @@ Read this before writing user-facing text.
 
 **Priya Raman, 34. Founder and CEO of Passage.**
 
-Passage is an AI travel agent that runs over chat and SMS. It plans trips,
-books them, and then watches them. When a flight slips, a gate changes, or a
-fare drops on a refundable ticket, the agent rebooks without being asked.
+Passage is an AI travel agent that runs over chat and SMS. It does four
+jobs, in the order a trip happens:
+
+1. **Plan.** Turn "long weekend, under four hours away, all-in under $3,000"
+   into two or three real options with dates and prices.
+2. **Inspire.** Know what is worth doing where you are going: the
+   neighbourhood nobody's cousin recommended, the thing that is only on this
+   week, the detour that fits.
+3. **Book.** Flights, hotels, trains, with the confirmation codes in one place.
+4. **Concierge.** Watch the trip while it is happening. When a flight slips,
+   a gate changes, or a fare drops on a refundable ticket, the agent rebooks
+   without being asked, and it answers at 2am when the bag did not arrive.
+
+Chat is the product. The web app exists so you can see what has been planned
+and what is coming up; every screen in it is something you could also ask
+the agent about.
 
 Her pitch on calls: "the part of travel that's just phone calls and patience,
 handled."
@@ -67,8 +80,9 @@ else.
 
 ## Users
 
-1,900 on the waitlist, 310 active. 78% United States, 12% UK and EU, 6%
-Canada, 4% APAC. Everything prices in USD and the international users have
+1,900 on the waitlist, 310 active, 41 paying. Those 41 pay a flat $20 per
+booking through payment links Priya makes by hand and pastes into emails;
+nothing is integrated. 78% United States, 12% UK and EU, 6% Canada, 4% APAC. Everything prices in USD and the international users have
 complained about it twice. That small international slice is the most engaged
 cohort: consultants and remote workers who fly monthly.
 
@@ -100,6 +114,11 @@ Plain, specific, slightly under-promising. Short sentences. Names what
 happened rather than how it felt. No exclamation marks. No "Oops!" No
 "Awesome!" Error messages say what broke and what to do next. Empty states
 say what will appear here and how to make it appear.
+
+The audience skews young and reads on a phone. That changes the look (bold,
+dark, big type, chat first) and the length (shorter), not the honesty.
+Casual is fine; hype is not. "You're covered until Sunday" works. "Get ready
+for an epic adventure!" does not.
 
 Good: "No trips yet. Add a destination and Passage will start watching fares."
 Bad: "Looks like it's a bit empty in here! Let's get you started on your next

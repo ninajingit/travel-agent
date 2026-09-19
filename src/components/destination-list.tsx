@@ -53,7 +53,8 @@ export function DestinationList({ initial }: { initial: Destination[] }) {
 
       {rows.length === 0 ? (
         <p className="rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-          No destinations yet. Add one and Passage will start watching fares.
+          Nothing saved yet. Add a place you are curious about and Passage
+          will start watching fares and collecting ideas.
         </p>
       ) : (
         <ul className="divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
@@ -119,7 +120,7 @@ function AddForm({ onAdded }: { onAdded: (row: Destination) => void }) {
           label="Notes"
           value={draft.notes}
           onChange={(notes) => setDraft({ ...draft, notes })}
-          placeholder="Optional. Airline preferences, dates that work, anything the agent should know."
+          placeholder="Optional. Dates that work, who is coming, anything the agent should know."
         />
       </div>
       {error && <ErrorText className="sm:col-span-3">{error}</ErrorText>}
@@ -160,14 +161,14 @@ function DestinationRow({
   }
 
   async function archive() {
-    if (!confirm(`Archive ${row.name}? Trips that use it are kept.`)) return;
+    if (!confirm(`Remove ${row.name} from Inspiration? Trips that use it are kept.`)) return;
     setBusy(true);
     setError(null);
     try {
       await callApi("DELETE", `/api/destinations/${row.id}`);
       onArchived(row.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not archive.");
+      setError(e instanceof Error ? e.message : "Could not remove.");
       setBusy(false);
     }
   }
@@ -245,7 +246,7 @@ function DestinationRow({
           onClick={archive}
           disabled={busy}
         >
-          Archive
+          Remove
         </Button>
       </div>
     </li>

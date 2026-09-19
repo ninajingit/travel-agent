@@ -8,7 +8,7 @@ Read `PLAN-STAGE1.md` for the commit-by-commit build plan.
 
 ## Current stage
 
-**Stage 1: application only. Commits 1 through 16.**
+**Stage 1: application only. Commits 1 through 20.**
 
 Payments are a later stage, run in a separate session. They are explicitly out
 of scope right now.
@@ -22,7 +22,7 @@ of scope right now.
   add it speculatively and do not leave a TODO for it.
 - `agent_transactions` is a product record only. It has no billing meaning
   yet. No `billable`, no `reported_at`, no plan reference.
-- The pricing page (commit 16) is static marketing copy. It must not read from
+- The pricing page (commit 20) is static marketing copy. It must not read from
   the database, check auth, or link to anything functional.
 - **One concern per commit.** Stop after each commit and wait for review
   before starting the next.

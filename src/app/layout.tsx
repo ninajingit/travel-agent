@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Passage",
-  description: "An AI travel agent that plans trips, books them, and watches them.",
+  description:
+    "Plans your trips, knows what is worth doing, books it, and stays on call while you travel.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

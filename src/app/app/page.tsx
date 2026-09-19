@@ -7,7 +7,7 @@ export default async function AppHome() {
     <div className="mx-auto w-full max-w-3xl">
       <h1 className="text-2xl font-semibold tracking-tight">Home</h1>
       <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-        Signed in as {user.email}. Your trips will appear here.
+        Signed in as {user.email}. Chat and what is coming up will live here.
       </p>
     </div>
   );
