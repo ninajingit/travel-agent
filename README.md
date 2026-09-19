@@ -23,8 +23,18 @@ npm run dev
 
 The app serves on http://localhost:3000.
 
+## Deployment
+
+Vercel builds from `main`, region `iad1`. `vercel.json` runs `npm run
+db:migrate` before `next build`, so a deploy applies any new migration in
+`drizzle/` to the database it is about to serve. Environment variables:
+`DATABASE_URL` and `DATABASE_URL_UNPOOLED` come from the Neon integration;
+the two Clerk keys are set on the project by hand.
+
 ## Scripts
 
 - `npm run dev` start the dev server
 - `npm run build` production build and type check
 - `npm run lint` ESLint
+- `npm run db:generate` write a migration from `src/db/schema.ts`
+- `npm run db:migrate` apply pending migrations
