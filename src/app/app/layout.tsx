@@ -1,0 +1,21 @@
+import Link from "next/link";
+import { UserButton } from "@clerk/nextjs";
+import { ensureUser } from "@/lib/auth";
+
+// Shell for every signed-in page. The proxy has already required a session,
+// so ensureUser() here guarantees the users row exists before any page runs.
+export default async function AppLayout({ children }: LayoutProps<"/app">) {
+  await ensureUser();
+
+  return (
+    <div className="flex flex-1 flex-col font-sans">
+      <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
+        <Link href="/app" className="font-semibold tracking-tight">
+          Passage
+        </Link>
+        <UserButton />
+      </header>
+      <main className="flex flex-1 flex-col px-6 py-8">{children}</main>
+    </div>
+  );
+}
