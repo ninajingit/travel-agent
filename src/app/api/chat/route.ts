@@ -9,6 +9,7 @@ import {
 } from "@/lib/api";
 import { getChannel, WebChannel } from "@/lib/channels";
 import { reply } from "@/lib/agent/script";
+import { recordTransaction } from "@/lib/agent/transactions";
 import {
   appendMessage,
   createConversation,
@@ -64,6 +65,14 @@ export async function POST(request: Request) {
   const agentMessages = [];
   for (const out of delivered) {
     agentMessages.push(await appendMessage(conversation.id, "agent", out.body));
+  }
+
+  // The agent acted on money: write the record at the moment it happened.
+  if (agent.action) {
+    await recordTransaction(user.id, {
+      tripId: conversation.tripId ?? null,
+      ...agent.action,
+    });
   }
 
   return NextResponse.json({

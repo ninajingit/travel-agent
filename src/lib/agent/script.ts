@@ -15,7 +15,15 @@ export type Intent =
 
 export type Turn = { role: "user" | "agent"; body: string };
 
-export type Reply = { intent: Intent; body: string };
+// When the agent acts on money, the reply carries what it did so the caller
+// can record it. Standby listings are free and carry nothing.
+export type AgentAction = {
+  kind: "booking" | "rebooking";
+  amountCents: number;
+  description: string;
+};
+
+export type Reply = { intent: Intent; body: string; action?: AgentAction };
 
 const YES = /^(yes|yep|yeah|ok|okay|sure|do it|book it|go ahead|confirm(ed)?|please do)\b/i;
 
@@ -50,10 +58,13 @@ export function detectIntent(message: string, history: Turn[]): Intent {
 
 export function reply(message: string, history: Turn[]): Reply {
   const intent = detectIntent(message, history);
-  return { intent, body: SCRIPT[intent](message, history) };
+  const result = SCRIPT[intent](message, history);
+  return typeof result === "string" ? { intent, body: result } : { intent, ...result };
 }
 
-const SCRIPT: Record<Intent, (message: string, history: Turn[]) => string> = {
+type ScriptResult = string | { body: string; action: AgentAction };
+
+const SCRIPT: Record<Intent, (message: string, history: Turn[]) => ScriptResult> = {
   plan: () =>
     [
       "Three ways to do it, assuming two people out of Newark:",
@@ -102,17 +113,31 @@ const SCRIPT: Record<Intent, (message: string, history: Turn[]) => string> = {
       ].join("\n");
     }
     if (/Sep 26/i.test(offer)) {
-      return [
-        "Done. You fly home on NH 10 on Sep 26, same seat class, new confirmation R4TX8L-2. Hotel Niwa is extended to Sep 26 with late checkout.",
-        "",
-        "$350 to your card on file: $142 fare difference and $208 for the room. It will show in your activity within a minute.",
-      ].join("\n");
+      return {
+        body: [
+          "Done. You fly home on NH 10 on Sep 26, same seat class, new confirmation R4TX8L-2. Hotel Niwa is extended to Sep 26 with late checkout.",
+          "",
+          "$350 to your card on file: $142 fare difference and $208 for the room. It will show in your activity within a minute.",
+        ].join("\n"),
+        action: {
+          kind: "rebooking",
+          amountCents: 35_000,
+          description: "NH 10 moved to Sep 26 and Hotel Niwa extended one night",
+        },
+      };
     }
-    return [
-      "Booked. TP 202 out on Oct 14, TP 201 back on Oct 21, two seats, confirmation K3M9PL. $1,368 to your card on file, and it will show in your activity within a minute.",
-      "",
-      "Seats 14C and 14D on the way out. I will watch the fare; if it drops on a refundable ticket I rebook and tell you.",
-    ].join("\n");
+    return {
+      body: [
+        "Booked. TP 202 out on Oct 14, TP 201 back on Oct 21, two seats, confirmation K3M9PL. $1,368 to your card on file, and it will show in your activity within a minute.",
+        "",
+        "Seats 14C and 14D on the way out. I will watch the fare; if it drops on a refundable ticket I rebook and tell you.",
+      ].join("\n"),
+      action: {
+        kind: "booking",
+        amountCents: 136_800,
+        description: "TAP TP 202 and TP 201, Newark to Lisbon, two seats, K3M9PL",
+      },
+    };
   },
 
   delay: () =>

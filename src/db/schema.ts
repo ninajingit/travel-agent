@@ -125,3 +125,26 @@ export const messages = pgTable("messages", {
     .notNull()
     .defaultNow(),
 });
+
+export const transactionKind = pgEnum("transaction_kind", [
+  "booking",
+  "rebooking",
+  "cancellation",
+]);
+
+// A record that the agent did something with money on a person's behalf:
+// booked, rebooked, or cancelled. Written by the agent at the moment it acts.
+export const agentTransactions = pgTable("agent_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  tripId: integer("trip_id").references(() => trips.id),
+  kind: transactionKind("kind").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("USD"),
+  description: text("description").notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

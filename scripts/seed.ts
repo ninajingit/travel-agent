@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   agentSettings,
+  agentTransactions,
   conversations,
   destinations,
   messages,
@@ -240,6 +241,53 @@ async function seedChats(
   return created;
 }
 
+// What the agent has done with money so far this month. Keyed on
+// (user, description).
+const TRANSACTIONS: Array<{
+  destination: "Lisbon" | "Tokyo";
+  kind: "booking" | "rebooking" | "cancellation";
+  amountCents: number;
+  description: string;
+  occurredAt: string;
+}> = [
+  { destination: "Tokyo", kind: "booking", amountCents: 184_200, description: "ANA NH 9 and NH 10, Chicago to Tokyo, R4TX8L", occurredAt: "2026-09-02T15:20:00Z" },
+  { destination: "Tokyo", kind: "booking", amountCents: 112_000, description: "Hotel Niwa Tokyo, seven nights, NW-77310", occurredAt: "2026-09-03T18:05:00Z" },
+  { destination: "Lisbon", kind: "booking", amountCents: 136_800, description: "TAP TP 202 and TP 201, Newark to Lisbon, two seats, H7K2QF", occurredAt: "2026-09-06T13:40:00Z" },
+  { destination: "Lisbon", kind: "booking", amountCents: 168_000, description: "Memmo Alfama, six nights, MA-118204", occurredAt: "2026-09-06T13:52:00Z" },
+];
+
+async function seedTransactions(
+  userId: number,
+  tripRows: Array<{ id: number; destinationId: number }>,
+  places: Array<{ id: number; name: string }>,
+) {
+  let created = 0;
+  for (const input of TRANSACTIONS) {
+    const existing = await db.query.agentTransactions.findFirst({
+      where: and(
+        eq(agentTransactions.userId, userId),
+        eq(agentTransactions.description, input.description),
+      ),
+    });
+    if (existing) continue;
+    const place = places.find((p) => p.name === input.destination);
+    const trip = place && tripRows.find((t) => t.destinationId === place.id);
+    if (!trip) {
+      throw new Error(`Seed transaction references unknown trip ${input.destination}`);
+    }
+    await db.insert(agentTransactions).values({
+      userId,
+      tripId: trip.id,
+      kind: input.kind,
+      amountCents: input.amountCents,
+      description: input.description,
+      occurredAt: new Date(input.occurredAt),
+    });
+    created += 1;
+  }
+  return created;
+}
+
 async function main() {
   const email = process.env.SEED_EMAIL;
   if (!email) {
@@ -260,6 +308,9 @@ async function main() {
 
   const newChats = await seedChats(user.id, tripRows, places);
   console.log(`chats         ${CHATS.length} total, ${newChats} new`);
+
+  const newTransactions = await seedTransactions(user.id, tripRows, places);
+  console.log(`transactions  ${TRANSACTIONS.length} total, ${newTransactions} new`);
 }
 
 main().catch((error) => {
