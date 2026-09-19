@@ -38,3 +38,4 @@ the two Clerk keys are set on the project by hand.
 - `npm run lint` ESLint
 - `npm run db:generate` write a migration from `src/db/schema.ts`
 - `npm run db:migrate` apply pending migrations
+- `npm run db:seed` upsert the demo account named by `SEED_EMAIL` (sign up in the app first)
