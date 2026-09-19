@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ensureUser } from "@/lib/auth";
 import { AccountMenu } from "@/components/account-menu";
+import { AppNav } from "@/components/app-nav";
 
 // Shell for every signed-in page. The proxy has already required a session,
 // so ensureUser() here guarantees the users row exists before any page runs.
@@ -8,21 +9,21 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
   await ensureUser();
 
   return (
-    <div className="flex flex-1 flex-col font-sans">
-      <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
-        <div className="flex items-center gap-6">
-          <Link href="/app" className="font-semibold tracking-tight">
-            Passage
-          </Link>
-          <nav className="flex gap-4 text-sm text-zinc-600 dark:text-zinc-400">
-            <Link href="/app/trips">My Trips</Link>
-            <Link href="/app/inspiration">Inspiration</Link>
-          </nav>
+    <div className="flex flex-1 flex-col">
+      <header className="sticky top-0 z-10 border-b border-border bg-bg/80 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <Link href="/app" className="font-display text-lg font-bold tracking-tight">
+              Passage
+            </Link>
+            <AppNav />
+          </div>
+          <AccountMenu />
         </div>
-        <AccountMenu />
       </header>
-      <main className="flex flex-1 flex-col px-6 py-8">{children}</main>
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
+        {children}
+      </main>
     </div>
   );
 }
-

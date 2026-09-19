@@ -69,3 +69,30 @@ const segmentStatusLabels = {
 export function segmentStatusLabel(status: keyof typeof segmentStatusLabels) {
   return segmentStatusLabels[status];
 }
+
+// Pill tones for statuses, shared by list and detail views.
+export function tripStatusTone(status: keyof typeof statusLabels) {
+  switch (status) {
+    case "booked":
+      return "accent" as const;
+    case "in_progress":
+      return "violet" as const;
+    case "cancelled":
+      return "danger" as const;
+    default:
+      return "neutral" as const;
+  }
+}
+
+export function segmentStatusTone(status: keyof typeof segmentStatusLabels) {
+  switch (status) {
+    case "delayed":
+      return "warn" as const;
+    case "cancelled":
+      return "danger" as const;
+    case "rebooked":
+      return "accent" as const;
+    default:
+      return "neutral" as const;
+  }
+}

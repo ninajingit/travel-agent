@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button, Card, EmptyState, ErrorText, Field } from "@/components/ui";
 
 // Client side of /app/destinations. The server page passes the first render;
 // after that every change goes through the API routes and the returned row
@@ -52,12 +53,12 @@ export function DestinationList({ initial }: { initial: Destination[] }) {
       />
 
       {rows.length === 0 ? (
-        <p className="rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+        <EmptyState>
           Nothing saved yet. Add a place you are curious about and Passage
           will start watching fares and collecting ideas.
-        </p>
+        </EmptyState>
       ) : (
-        <ul className="divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <Card className="divide-y divide-border">
           {rows.map((row) => (
             <DestinationRow
               key={row.id}
@@ -68,7 +69,7 @@ export function DestinationList({ initial }: { initial: Destination[] }) {
               }
             />
           ))}
-        </ul>
+        </Card>
       )}
     </div>
   );
@@ -96,18 +97,18 @@ function AddForm({ onAdded }: { onAdded: (row: Destination) => void }) {
   return (
     <form
       onSubmit={submit}
-      className="grid gap-3 rounded-md border border-zinc-200 p-4 sm:grid-cols-[1fr_1fr_auto] dark:border-zinc-800"
+      className="grid gap-3 rounded-card border border-border bg-surface p-5 sm:grid-cols-[1fr_1fr_auto]"
     >
       <Field
         label="Name"
         value={draft.name}
-        onChange={(name) => setDraft({ ...draft, name })}
+        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
         placeholder="Lisbon"
       />
       <Field
         label="Country"
         value={draft.country}
-        onChange={(country) => setDraft({ ...draft, country })}
+        onChange={(e) => setDraft({ ...draft, country: e.target.value })}
         placeholder="Portugal"
       />
       <div className="flex items-end">
@@ -119,7 +120,7 @@ function AddForm({ onAdded }: { onAdded: (row: Destination) => void }) {
         <Field
           label="Notes"
           value={draft.notes}
-          onChange={(notes) => setDraft({ ...draft, notes })}
+          onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
           placeholder="Optional. Dates that work, who is coming, anything the agent should know."
         />
       </div>
@@ -175,23 +176,23 @@ function DestinationRow({
 
   if (editing) {
     return (
-      <li className="p-4">
+      <li className="p-5">
         <form onSubmit={save} className="grid gap-3 sm:grid-cols-2">
           <Field
             label="Name"
             value={draft.name}
-            onChange={(name) => setDraft({ ...draft, name })}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
           />
           <Field
             label="Country"
             value={draft.country}
-            onChange={(country) => setDraft({ ...draft, country })}
+            onChange={(e) => setDraft({ ...draft, country: e.target.value })}
           />
           <div className="sm:col-span-2">
             <Field
               label="Notes"
               value={draft.notes}
-              onChange={(notes) => setDraft({ ...draft, notes })}
+              onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
             />
           </div>
           {error && <ErrorText className="sm:col-span-2">{error}</ErrorText>}
@@ -216,19 +217,15 @@ function DestinationRow({
   }
 
   return (
-    <li className="flex items-start justify-between gap-4 p-4">
+    <li className="flex items-start justify-between gap-4 p-5">
       <div className="min-w-0">
-        <div className="font-medium">
+        <div className="font-display text-lg font-bold">
           {row.name}
-          <span className="ml-2 text-sm font-normal text-zinc-500">
+          <span className="ml-2 text-sm font-medium text-muted">
             {row.country}
           </span>
         </div>
-        {row.notes && (
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {row.notes}
-          </p>
-        )}
+        {row.notes && <p className="mt-1 text-sm text-muted">{row.notes}</p>}
         {error && <ErrorText>{error}</ErrorText>}
       </div>
       <div className="flex shrink-0 gap-2">
@@ -250,62 +247,5 @@ function DestinationRow({
         </Button>
       </div>
     </li>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <label className="block text-sm">
-      <span className="text-zinc-600 dark:text-zinc-400">{label}</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="mt-1 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-base outline-none focus:border-zinc-500 dark:border-zinc-700"
-      />
-    </label>
-  );
-}
-
-function Button({
-  variant = "primary",
-  className = "",
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary";
-}) {
-  const look =
-    variant === "primary"
-      ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-      : "border border-zinc-300 dark:border-zinc-700";
-  return (
-    <button
-      {...props}
-      className={`rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50 ${look} ${className}`}
-    />
-  );
-}
-
-function ErrorText({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <p className={`text-sm text-red-700 dark:text-red-400 ${className}`}>
-      {children}
-    </p>
   );
 }

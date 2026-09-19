@@ -8,8 +8,11 @@ import {
   formatDateTime,
   segmentKindLabel,
   segmentStatusLabel,
+  segmentStatusTone,
   tripStatusLabel,
+  tripStatusTone,
 } from "@/lib/format";
+import { Card, EmptyState, PageHeader, Pill } from "@/components/ui";
 
 export default async function TripPage({ params }: PageProps<"/app/trips/[id]">) {
   const user = await ensureUser();
@@ -18,70 +21,66 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
   if (!trip) notFound();
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
-      <Link
-        href="/app/trips"
-        className="text-sm text-zinc-600 hover:underline dark:text-zinc-400"
-      >
+    <div>
+      <Link href="/app/trips" className="text-sm text-muted hover:text-fg">
         ← My Trips
       </Link>
 
-      <div className="mt-3 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {trip.destination.name}
-            <span className="ml-2 text-base font-normal text-zinc-500">
-              {trip.destination.country}
-            </span>
-          </h1>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {formatDateRange(trip.startsAt, trip.endsAt)}
-          </p>
-        </div>
-        <span className="rounded-full border border-zinc-300 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
-          {tripStatusLabel(trip.status)}
-        </span>
+      <div className="mt-4">
+        <PageHeader
+          title={
+            <>
+              {trip.destination.name}
+              <span className="ml-3 text-xl font-medium text-muted sm:text-2xl">
+                {trip.destination.country}
+              </span>
+            </>
+          }
+          intro={formatDateRange(trip.startsAt, trip.endsAt)}
+          aside={
+            <Pill tone={tripStatusTone(trip.status)}>
+              {tripStatusLabel(trip.status)}
+            </Pill>
+          }
+        />
       </div>
 
-      <h2 className="mt-8 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+      <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted">
         Itinerary
       </h2>
       {trip.segments.length === 0 ? (
-        <p className="mt-2 rounded-md border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-          Nothing booked yet. Flights, stays, and trains show up here as
-          Passage books them.
-        </p>
+        <div className="mt-3">
+          <EmptyState>
+            Nothing booked yet. Flights, stays, and trains show up here as
+            Passage books them.
+          </EmptyState>
+        </div>
       ) : (
-        <ol className="mt-2 divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <Card className="mt-3 divide-y divide-border">
           {trip.segments.map((segment) => (
-            <li key={segment.id} className="grid gap-1 p-4 sm:grid-cols-[6rem_1fr_auto]">
-              <div className="text-sm text-zinc-500">
+            <div
+              key={segment.id}
+              className="grid gap-2 p-5 sm:grid-cols-[5rem_1fr_auto] sm:items-start"
+            >
+              <div className="text-sm font-medium text-muted">
                 {segmentKindLabel(segment.kind)}
               </div>
               <div>
-                <div className="font-medium">{segment.carrier}</div>
-                <div className="mt-0.5 text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="font-semibold">{segment.carrier}</div>
+                <div className="mt-1 text-sm text-muted">
                   {formatDateTime(segment.departAt)} →{" "}
                   {formatDateTime(segment.arriveAt)}
                 </div>
-                <div className="mt-0.5 font-mono text-xs text-zinc-500">
+                <div className="mt-1 font-mono text-xs text-muted">
                   {segment.ref}
                 </div>
               </div>
-              <div
-                className={`text-sm font-medium ${
-                  segment.status === "delayed"
-                    ? "text-amber-700 dark:text-amber-400"
-                    : segment.status === "cancelled"
-                      ? "text-red-700 dark:text-red-400"
-                      : "text-zinc-600 dark:text-zinc-400"
-                }`}
-              >
+              <Pill tone={segmentStatusTone(segment.status)}>
                 {segmentStatusLabel(segment.status)}
-              </div>
-            </li>
+              </Pill>
+            </div>
           ))}
-        </ol>
+        </Card>
       )}
     </div>
   );
