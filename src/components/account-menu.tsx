@@ -3,7 +3,8 @@
 import { UserButton } from "@clerk/nextjs";
 
 // The avatar menu. Clerk renders account and sign-out; we add the link to
-// agent settings so it sits with the rest of "me" rather than in the nav.
+// agent settings and pricing so they sit with the rest of "me" rather than
+// in the nav.
 // Client component because UserButton only accepts custom children there.
 export function AccountMenu() {
   return (
@@ -14,8 +15,26 @@ export function AccountMenu() {
           href="/app/settings"
           labelIcon={<SettingsIcon />}
         />
+        <UserButton.Link label="Pricing" href="/pricing" labelIcon={<TagIcon />} />
       </UserButton.MenuItems>
     </UserButton>
+  );
+}
+
+function TagIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden
+    >
+      <path d="M2 2h5.5l6.5 6.5-5.5 5.5L2 7.5V2z" />
+      <circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
   );
 }
 

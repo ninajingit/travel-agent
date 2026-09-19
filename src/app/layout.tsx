@@ -38,15 +38,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           signInFallbackRedirectUrl="/app"
           signUpFallbackRedirectUrl="/app"
           appearance={{
-            // Clerk's components take real colour values, so they render in
-            // the dark palette in both modes.
+            // Clerk's components follow the page theme through the same
+            // tokens the rest of the app uses (see globals.css).
             variables: {
-              colorPrimary: "#c6ff3d",
-              colorBackground: "#15151b",
-              colorForeground: "#f5f5f7",
-              colorInput: "#0b0b0f",
-              colorInputForeground: "#f5f5f7",
-              colorBorder: "#2a2a36",
+              colorPrimary: "var(--accent)",
+              colorPrimaryForeground: "var(--accent-fg)",
+              colorBackground: "var(--surface)",
+              colorForeground: "var(--fg)",
+              colorMutedForeground: "var(--muted)",
+              colorInput: "var(--bg)",
+              colorInputForeground: "var(--fg)",
+              colorBorder: "var(--border)",
+              colorNeutral: "var(--fg)",
               borderRadius: "0.875rem",
               fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
             },

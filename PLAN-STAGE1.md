@@ -1,9 +1,9 @@
 # PLAN-STAGE1.md
 
 Stage 1: build the Passage application. No payments, no billing, no
-subscriptions. Commits 1 through 21.
+subscriptions. Commits 1 through 22.
 
-A later stage, run in a separate session, adds Stripe starting at commit 22.
+A later stage, run in a separate session, adds Stripe starting at commit 23.
 That plan is deliberately not in this repo yet. Do not go looking for it and
 do not prepare for it.
 
@@ -63,6 +63,7 @@ variable.
 | 19 | trip monitoring view: delay detected, rebook suggested, rebook accepted | accepting writes a transaction |
 | 20 | landing and pricing pages, static marketing copy only | no auth coupling, nothing functional |
 | 21 | chat composer: example requests typed and erased in place of starter buttons | animation runs on an empty thread, stops once typing starts |
+| 22 | account menu follows the page theme; Pricing link in the menu | readable in light and dark, link opens the static page |
 
 Revised after commit 10 (2026-09-19): chat is the core product, so it gets
 persistence and history, the home page becomes chat-first, and the visual
@@ -125,5 +126,5 @@ A reviewer can sign in, save a place under Inspiration, see two trips, change
 agent settings from the account menu, read past chats, have a scripted
 conversation that books something, watch a delay trigger a rebook, and see
 all of it in a monthly activity list with a running count. Deployed on
-Vercel. Twenty-one commits. Zero mentions of money anywhere
+Vercel. Twenty-two commits. Zero mentions of money anywhere
 in the codebase except static copy on the pricing page.
