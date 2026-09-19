@@ -10,9 +10,14 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
   return (
     <div className="flex flex-1 flex-col font-sans">
       <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
-        <Link href="/app" className="font-semibold tracking-tight">
-          Passage
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link href="/app" className="font-semibold tracking-tight">
+            Passage
+          </Link>
+          <nav className="flex gap-4 text-sm text-zinc-600 dark:text-zinc-400">
+            <Link href="/app/destinations">Destinations</Link>
+          </nav>
+        </div>
         <UserButton />
       </header>
       <main className="flex flex-1 flex-col px-6 py-8">{children}</main>
