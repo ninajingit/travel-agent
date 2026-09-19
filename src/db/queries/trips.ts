@@ -43,3 +43,37 @@ export async function getTrip(userId: number, id: number) {
 
   return { ...trip, destination, segments };
 }
+
+// The rebook itself: mark the delayed segment rebooked and add the
+// replacement. The neon-http driver has no transactions, so the two writes
+// run in order; the segment is flipped first so a retry cannot double-book.
+export async function rebookSegment(
+  tripId: number,
+  segmentId: number,
+  replacement: {
+    kind: "flight" | "hotel" | "train";
+    carrier: string;
+    ref: string;
+    departAt: Date;
+    arriveAt: Date;
+  },
+) {
+  const [old] = await db
+    .update(tripSegments)
+    .set({ status: "rebooked" })
+    .where(
+      and(
+        eq(tripSegments.id, segmentId),
+        eq(tripSegments.tripId, tripId),
+        eq(tripSegments.status, "delayed"),
+      ),
+    )
+    .returning();
+  if (!old) return null;
+
+  const [added] = await db
+    .insert(tripSegments)
+    .values({ tripId, status: "scheduled", ...replacement })
+    .returning();
+  return { old, added };
+}

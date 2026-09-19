@@ -6,6 +6,7 @@ import { parseId } from "@/lib/api";
 import {
   formatDateRange,
   formatDateTime,
+  formatMoney,
   segmentKindLabel,
   segmentStatusLabel,
   segmentStatusTone,
@@ -13,12 +14,22 @@ import {
   tripStatusTone,
 } from "@/lib/format";
 import { Card, EmptyState, PageHeader, Pill } from "@/components/ui";
+import { MonitoringPanel } from "@/components/monitoring-panel";
+import { reportFor } from "@/lib/agent/monitoring";
+import { getAgentSettings } from "@/db/queries/agent-settings";
 
 export default async function TripPage({ params }: PageProps<"/app/trips/[id]">) {
   const user = await ensureUser();
   const id = parseId((await params).id);
   const trip = id ? await getTrip(user.id, id) : null;
   if (!trip) notFound();
+
+  // Monitoring: the first delayed segment gets the panel. Watched trips with
+  // nothing wrong get one quiet line.
+  const delayed = trip.segments.find((s) => s.status === "delayed");
+  const report = delayed ? reportFor(delayed) : null;
+  const watching = trip.status === "booked" || trip.status === "in_progress";
+  const settings = delayed ? await getAgentSettings(user.id) : null;
 
   return (
     <div>
@@ -44,6 +55,34 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
           }
         />
       </div>
+
+      {delayed && report && settings ? (
+        <div className="mt-8">
+          <MonitoringPanel
+            tripId={trip.id}
+            segmentId={delayed.id}
+            carrier={delayed.carrier}
+            delayMinutes={report.delayMinutes}
+            reason={report.reason}
+            autoRebook={settings.autoRebook}
+            replacement={
+              report.replacement
+                ? {
+                    carrier: report.replacement.carrier,
+                    departLabel: formatDateTime(report.replacement.departAt),
+                    arriveLabel: formatDateTime(report.replacement.arriveAt),
+                    amountLabel: formatMoney(report.replacement.amountCents),
+                    summary: report.replacement.summary,
+                  }
+                : null
+            }
+          />
+        </div>
+      ) : watching ? (
+        <p className="mt-8 text-sm text-muted">
+          Passage is watching this trip. Nothing needs your attention right now.
+        </p>
+      ) : null}
 
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted">
         Itinerary
