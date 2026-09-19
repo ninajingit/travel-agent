@@ -6,8 +6,9 @@
 // The person must already exist in Clerk (sign up once first). Later commits
 // add seed functions for their own tables below seedUser.
 import { clerkClient } from "@clerk/nextjs/server";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { destinations, users } from "@/db/schema";
 
 async function seedUser(email: string) {
   const clerk = await clerkClient();
@@ -27,6 +28,34 @@ async function seedUser(email: string) {
   return user;
 }
 
+const DESTINATIONS = [
+  { name: "Lisbon", country: "Portugal", notes: "Prefer TAP nonstop from EWR." },
+  { name: "Tokyo", country: "Japan", notes: "Late March if fares allow." },
+  { name: "Mexico City", country: "Mexico", notes: null },
+];
+
+async function seedDestinations(userId: number) {
+  const rows = [];
+  for (const input of DESTINATIONS) {
+    const existing = await db.query.destinations.findFirst({
+      where: and(
+        eq(destinations.userId, userId),
+        eq(destinations.name, input.name),
+      ),
+    });
+    if (existing) {
+      rows.push(existing);
+      continue;
+    }
+    const [row] = await db
+      .insert(destinations)
+      .values({ userId, ...input })
+      .returning();
+    rows.push(row);
+  }
+  return rows;
+}
+
 async function main() {
   const email = process.env.SEED_EMAIL;
   if (!email) {
@@ -34,7 +63,10 @@ async function main() {
   }
 
   const user = await seedUser(email);
-  console.log(`user      ${user.id}  ${user.email}`);
+  console.log(`user          ${user.id}  ${user.email}`);
+
+  const places = await seedDestinations(user.id);
+  console.log(`destinations  ${places.map((d) => d.id).join(", ")}`);
 }
 
 main().catch((error) => {

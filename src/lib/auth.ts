@@ -42,3 +42,10 @@ export const ensureUser = cache(async () => {
     .returning();
   return created;
 });
+
+// For route handlers: the users row, or null when there is no session so the
+// handler can answer 401 instead of the proxy redirecting to sign-in.
+export async function signedInUser() {
+  const { userId } = await auth();
+  return userId ? ensureUser() : null;
+}
