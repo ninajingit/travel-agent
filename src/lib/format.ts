@@ -37,3 +37,35 @@ const statusLabels = {
 export function tripStatusLabel(status: keyof typeof statusLabels) {
   return statusLabels[status];
 }
+
+// Segment times are shown in UTC with the zone named, since the traveller's
+// timezone is not known on the server. "Oct 14, 22:55 UTC".
+const dateTime = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "UTC",
+});
+
+export function formatDateTime(value: Date) {
+  return `${dateTime.format(value)} UTC`;
+}
+
+const kindLabels = { flight: "Flight", hotel: "Hotel", train: "Train" } as const;
+
+export function segmentKindLabel(kind: keyof typeof kindLabels) {
+  return kindLabels[kind];
+}
+
+const segmentStatusLabels = {
+  scheduled: "Scheduled",
+  delayed: "Delayed",
+  rebooked: "Rebooked",
+  cancelled: "Cancelled",
+} as const;
+
+export function segmentStatusLabel(status: keyof typeof segmentStatusLabels) {
+  return segmentStatusLabels[status];
+}

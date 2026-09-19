@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ensureUser } from "@/lib/auth";
 import { listTrips } from "@/db/queries/trips";
 import { formatDateRange, tripStatusLabel } from "@/lib/format";
@@ -20,7 +21,11 @@ export default async function TripsPage() {
       ) : (
         <ul className="mt-6 divide-y divide-zinc-200 rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {rows.map((trip) => (
-            <li key={trip.id} className="flex items-center justify-between gap-4 p-4">
+            <li key={trip.id}>
+              <Link
+                href={`/app/trips/${trip.id}`}
+                className="flex items-center justify-between gap-4 p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              >
               <div>
                 <div className="font-medium">
                   {trip.destination.name}
@@ -35,6 +40,7 @@ export default async function TripsPage() {
               <span className="rounded-full border border-zinc-300 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
                 {tripStatusLabel(trip.status)}
               </span>
+              </Link>
             </li>
           ))}
         </ul>
