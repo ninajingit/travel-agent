@@ -98,3 +98,30 @@ export const agentSettings = pgTable("agent_settings", {
     .notNull()
     .default(["web"]),
 });
+
+// A conversation is one thread with the agent, optionally about a trip.
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  tripId: integer("trip_id").references(() => trips.id),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const messageRole = pgEnum("message_role", ["user", "agent"]);
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id")
+    .notNull()
+    .references(() => conversations.id),
+  role: messageRole("role").notNull(),
+  body: text("body").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

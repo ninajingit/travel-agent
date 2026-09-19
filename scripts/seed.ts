@@ -10,11 +10,14 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   agentSettings,
+  conversations,
   destinations,
+  messages,
   tripSegments,
   trips,
   users,
 } from "@/db/schema";
+import { CHATS } from "./seed-data/chats";
 
 async function seedUser(email: string) {
   const clerk = await clerkClient();
@@ -196,6 +199,47 @@ async function seedAgentSettings(userId: number) {
     .onConflictDoNothing();
 }
 
+// Past chats with the agent. Keyed on (user, title); messages are written only
+// when the conversation is first created.
+async function seedChats(
+  userId: number,
+  tripRows: Array<{ id: number; destinationId: number }>,
+  places: Array<{ id: number; name: string }>,
+) {
+  let created = 0;
+  for (const chat of CHATS) {
+    const existing = await db.query.conversations.findFirst({
+      where: and(eq(conversations.userId, userId), eq(conversations.title, chat.title)),
+    });
+    if (existing) continue;
+
+    let tripId: number | null = null;
+    if (chat.trip) {
+      const place = places.find((p) => p.name === chat.trip);
+      const trip = place && tripRows.find((t) => t.destinationId === place.id);
+      if (!trip) {
+        throw new Error(`Seed chat "${chat.title}" references unknown trip ${chat.trip}`);
+      }
+      tripId = trip.id;
+    }
+
+    const [conversation] = await db
+      .insert(conversations)
+      .values({ userId, tripId, title: chat.title, createdAt: new Date(chat.turns[0].at) })
+      .returning();
+    await db.insert(messages).values(
+      chat.turns.map((turn) => ({
+        conversationId: conversation.id,
+        role: turn.role,
+        body: turn.body,
+        createdAt: new Date(turn.at),
+      })),
+    );
+    created += 1;
+  }
+  return created;
+}
+
 async function main() {
   const email = process.env.SEED_EMAIL;
   if (!email) {
@@ -213,6 +257,9 @@ async function main() {
 
   await seedAgentSettings(user.id);
   console.log(`settings      ok`);
+
+  const newChats = await seedChats(user.id, tripRows, places);
+  console.log(`chats         ${CHATS.length} total, ${newChats} new`);
 }
 
 main().catch((error) => {
