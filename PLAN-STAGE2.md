@@ -165,11 +165,12 @@ Account `acct_1UHQUoIpD2s73ETA`, "Llama Inc. sandbox". Production host
 | Plus product / price | `prod_VIAJqOsiIbtZp8` / `price_1UHZyYIpD2s73ETAwFZNEtGY` ($29/mo) |
 | Pro product / price | `prod_VIAJUsOJr4TcrX` / `price_1UHZyjIpD2s73ETAYe02FeiQ` ($99/mo) |
 | Pass product / price | `prod_VIAHx7Za882xno` / `price_1UHZwcIpD2s73ETADkqWfvdN` ($150 once) |
+| Free product / price | `prod_VICZ6gAHgo2sOz` / `price_1UHcAbIpD2s73ETAHpQH9rlF` — **archived**, see D25 |
 | Customer Portal configuration | `bpc_1UHbrmIpD2s73ETA6fr1gfJm` |
 | Webhook endpoint | `we_1UHbroIpD2s73ETADIw57CAF` |
 
-The three prices were created by hand and carry no lookup keys yet; commit 35
-sets them. The Portal allows switching between Plus and Pro, prorates
+The three prices were created by hand; commit 35 gave them their lookup keys
+(`plus_monthly`, `pro_monthly`, `concierge_pass`). The Portal allows switching between Plus and Pro, prorates
 upgrades, schedules decreases for period end, cancels at period end, shows
 invoices, and ends a trial on plan change. The webhook endpoint points at a
 route that does not exist until commit 37; Stripe retries, and that is fine.
@@ -225,6 +226,7 @@ route that does not exist until commit 37; Stripe retries, and that is fine.
 | D22 | Statement descriptor | `LLAMA INC` with dynamic suffix `MIRA`. |
 | D23 | Customer model | Customers v1. Accounts v2 is still preview for non-Connect accounts. |
 | D24 | Stripe Invoicing | Unused. Subscription invoices come from Billing; there is no manual-invoice flow in Stage 2. |
+| D25 | Is Free a $0 subscription? | No. Free is the absence of a subscription. Tried the other way on 2026-09-19 and backed out the same hour: a $0 subscription puts Stripe in the signup path for people who pay nothing, counts every free signup as a new subscriber and every abandonment as churn in the numbers the board reads, and breaks the one-call hosted Checkout upgrade because Checkout creates a subscription rather than changing one. The Free product and price are archived in the sandbox. |
 
 ## Definition of done, Phase A
 

@@ -3,8 +3,11 @@ import { stripe } from "./stripe";
 // Every price the app sells, addressed by lookup key rather than by price id.
 // Lookup keys are stable across accounts, so sandbox and live differ only by
 // which secret key is in the environment. Price ids do not survive the move.
+//
+// Free is not here on purpose. Free is the absence of a subscription, not a
+// $0 one: it keeps Stripe out of the signup path, and it keeps free accounts
+// out of the MRR and churn numbers. See D25 in PLAN-STAGE2.md.
 export const LOOKUP_KEYS = {
-  free: "free_monthly",
   plus: "plus_monthly",
   pro: "pro_monthly",
   pass: "concierge_pass",
@@ -23,12 +26,6 @@ export const CATALOG: Record<
     recurring: boolean;
   }
 > = {
-  free: {
-    lookupKey: LOOKUP_KEYS.free,
-    productName: "Free",
-    unitAmount: 0,
-    recurring: true,
-  },
   plus: {
     lookupKey: LOOKUP_KEYS.plus,
     productName: "Plus",
