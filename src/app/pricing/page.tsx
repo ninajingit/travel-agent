@@ -48,7 +48,7 @@ const OFFERS = [
   },
   {
     name: "Concierge Pass",
-    price: "$100",
+    price: "$150",
     cadence: "per trip",
     summary: "Everything in Pro, for one trip, without a membership.",
     details: [

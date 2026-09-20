@@ -8,7 +8,7 @@ Read `PLAN-STAGE1.md` for the commit-by-commit build plan.
 
 ## Current stage
 
-**Stage 1: application only. Commits 1 through 28.**
+**Stage 1: application only. Commits 1 through 30.**
 
 Payments are a later stage, run in a separate session. They are explicitly out
 of scope right now.
