@@ -44,3 +44,25 @@ export async function blockingSubscription(userId: number) {
     .limit(1);
   return row ?? null;
 }
+
+/**
+ * The most recent membership that has stopped, for someone who has none now.
+ *
+ * Without this, a person whose card failed through every retry simply becomes
+ * "Free" with no account of what happened, which reads like the app lost
+ * their money rather than like a payment that did not go through.
+ */
+export async function lapsedSubscription(userId: number) {
+  const [row] = await db
+    .select()
+    .from(subscriptions)
+    .where(
+      and(
+        eq(subscriptions.userId, userId),
+        inArray(subscriptions.status, ["unpaid", "canceled", "incomplete_expired"]),
+      ),
+    )
+    .orderBy(desc(subscriptions.currentPeriodEnd))
+    .limit(1);
+  return row ?? null;
+}

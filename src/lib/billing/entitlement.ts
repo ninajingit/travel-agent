@@ -2,7 +2,7 @@ import { and, eq, gte, lt } from "drizzle-orm";
 import { db } from "@/db";
 import { agentTransactions, conciergePasses, trips } from "@/db/schema";
 import { monthBounds } from "@/db/queries/agent-transactions";
-import { accessSubscription } from "./subscription";
+import { accessSubscription, lapsedSubscription } from "./subscription";
 
 export type Plan = "free" | "plus" | "pro";
 
@@ -36,6 +36,8 @@ export type Entitlement = {
   actionsAllowed: number;
   actionsLeft: number;
   passes: Pass[];
+  /** Set only when there is no live membership: what the last one did. */
+  lapsed: { plan: Plan; status: string; endedAt: Date } | null;
 };
 
 /** Is this trip covered by a pass right now? A pass grants Pro for one trip. */
@@ -132,6 +134,10 @@ export async function getEntitlement(userId: number): Promise<Entitlement> {
   const subscription = await accessSubscription(userId);
   const plan: Plan = subscription?.plan ?? "free";
 
+  // Only look for a lapse when there is nothing live; an active membership
+  // makes an older cancelled one history, not news.
+  const lapsedRow = subscription ? null : await lapsedSubscription(userId);
+
   const now = new Date();
   const fallback = monthBounds(now.getUTCFullYear(), now.getUTCMonth() + 1);
   const periodStart = subscription?.currentPeriodStart ?? fallback.start;
@@ -202,5 +208,12 @@ export async function getEntitlement(userId: number): Promise<Entitlement> {
     actionsAllowed,
     actionsLeft: Math.max(0, actionsAllowed - actionsUsed),
     passes,
+    lapsed: lapsedRow
+      ? {
+          plan: lapsedRow.plan,
+          status: lapsedRow.status,
+          endedAt: lapsedRow.currentPeriodEnd,
+        }
+      : null,
   };
 }

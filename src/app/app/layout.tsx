@@ -1,6 +1,7 @@
 import { ensureUser } from "@/lib/auth";
 import { AccountMenu } from "@/components/account-menu";
 import { AppNav } from "@/components/app-nav";
+import { BillingBanner } from "@/components/billing-banner";
 import { ChatLauncher } from "@/components/chat-launcher";
 import { Wordmark } from "@/components/wordmark";
 
@@ -20,6 +21,7 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
           <AccountMenu />
         </div>
       </header>
+      <BillingBanner />
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-24">
         {children}
       </main>

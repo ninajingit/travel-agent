@@ -83,6 +83,23 @@ export default async function MembershipPage({
         </Card>
       )}
 
+      {isFree && entitlement.lapsed && (
+        <Card className="mt-8 border-danger p-5">
+          <p className="font-semibold text-danger">
+            {entitlement.lapsed.status === "unpaid"
+              ? "Your membership stopped because the payment could not be taken."
+              : `Your ${PLAN_NAME[entitlement.lapsed.plan]} membership ended on ${formatDay(entitlement.lapsed.endedAt)}.`}
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            Planning and inspiration still work. Trips Mira already booked are
+            still yours; it just will not book or rebook anything new.
+          </p>
+          <div className="mt-4">
+            <ButtonLink href="/pricing">See the plans</ButtonLink>
+          </div>
+        </Card>
+      )}
+
       {entitlement.pastDue && (
         <Card className="mt-8 border-warn p-5">
           <p className="font-semibold text-warn">Your last payment did not go through.</p>
@@ -117,7 +134,11 @@ export default async function MembershipPage({
 
           <div className="flex flex-col gap-2">
             {isFree ? (
-              <ButtonLink href="/pricing">See the plans</ButtonLink>
+              // The lapse notice above already offers this; twice reads like
+              // a sales pitch rather than an explanation.
+              entitlement.lapsed ? null : (
+                <ButtonLink href="/pricing">See the plans</ButtonLink>
+              )
             ) : (
               <>
                 <PortalButton>Manage membership</PortalButton>
