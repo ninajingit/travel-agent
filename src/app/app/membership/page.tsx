@@ -5,6 +5,7 @@ import { CATALOG } from "@/lib/billing/catalog";
 import { listTrips } from "@/db/queries/trips";
 import { formatMoney } from "@/lib/format";
 import { Card, ButtonLink, EmptyState, PageHeader, Pill } from "@/components/ui";
+import { BillingHistory } from "@/components/billing-history";
 import { CheckoutReturn } from "@/components/checkout-return";
 import { PortalButton } from "@/components/portal-button";
 
@@ -207,6 +208,13 @@ export default async function MembershipPage({
           </>
         )}
       </Card>
+
+      <h2 className="mt-10 font-display text-xl font-bold">Everything charged</h2>
+      <p className="mt-1 text-sm text-muted">
+        Your membership and anything Mira paid for on your behalf, in one
+        list, newest first. It should match your card statement.
+      </p>
+      <BillingHistory />
 
       <h2 className="mt-10 font-display text-xl font-bold">Concierge Passes</h2>
       <p className="mt-1 text-sm text-muted">
