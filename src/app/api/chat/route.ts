@@ -8,7 +8,8 @@ import {
   unauthorized,
 } from "@/lib/api";
 import { getChannel, WebChannel } from "@/lib/channels";
-import { reply } from "@/lib/agent/script";
+import { actionNeedsMembership, actionsSpent, reply } from "@/lib/agent/script";
+import { getEntitlement, refuseAction } from "@/lib/billing/entitlement";
 import { recordTransaction } from "@/lib/agent/transactions";
 import {
   appendMessage,
@@ -57,10 +58,37 @@ export async function POST(request: Request) {
     conversation.messages.map((m) => ({ role: m.role, body: m.body })),
   );
 
+  // The agent decided to spend money. Whether it is allowed to is a question
+  // about the account, which the script cannot see, so it is answered here.
+  // A refusal replaces the reply rather than appending to it: being told
+  // "booked" and "not booked" in one breath is worse than either.
+  let replyBody = agent.body;
+  let action = agent.action;
+  if (action) {
+    const entitlement = await getEntitlement(user.id);
+    const refusal = refuseAction(entitlement, conversation.tripId ?? null);
+    if (refusal) {
+      replyBody =
+        refusal.reason === "plan"
+          ? actionNeedsMembership(action)
+          : actionsSpent({
+              used: entitlement.actionsUsed,
+              allowed: entitlement.actionsAllowed,
+              resetsOn: entitlement.periodEnd.toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "long",
+                timeZone: "UTC",
+              }),
+              plan: entitlement.plan === "pro" ? "pro" : "plus",
+            });
+      action = undefined;
+    }
+  }
+
   // Through the channel abstraction, even though for web the round trip is
   // this same HTTP response.
   const web = getChannel("web") as WebChannel;
-  await web.send({ userId: user.id, body: agent.body });
+  await web.send({ userId: user.id, body: replyBody });
   const delivered = web.drain(user.id);
   const agentMessages = [];
   for (const out of delivered) {
@@ -68,10 +96,10 @@ export async function POST(request: Request) {
   }
 
   // The agent acted on money: write the record at the moment it happened.
-  if (agent.action) {
+  if (action) {
     await recordTransaction(user.id, {
       tripId: conversation.tripId ?? null,
-      ...agent.action,
+      ...action,
     });
   }
 

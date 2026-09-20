@@ -17,6 +17,7 @@ import {
   canBook,
   getEntitlement,
   hasPass,
+  refuseAction,
 } from "@/lib/billing/entitlement";
 
 const tag = Math.random().toString(36).slice(2, 10);
@@ -119,6 +120,28 @@ async function main() {
     check("pass: other trips still count", e.actionsLeft === 9);
     check("pass: grants auto-rebook on that trip", canAutoRebook(e, trip.id) === true);
     check("pass: not on another trip", canAutoRebook(e, otherTrip.id) === false);
+
+    // Refusal reasons are told apart, because they need different answers.
+    check("plus: nothing to refuse while actions remain", refuseAction(e, otherTrip.id) === null);
+
+    // Spend the whole Plus allowance on the uncovered trip.
+    await db.insert(agentTransactions).values(
+      Array.from({ length: 9 }, (_, i) => ({
+        userId: user.id, tripId: otherTrip.id, kind: "booking" as const,
+        amountCents: 100, description: `fill ${i}`,
+      })),
+    );
+    e = await getEntitlement(user.id);
+    check("plus: allowance is spent", e.actionsUsed === 10 && e.actionsLeft === 0);
+    check("plus: spent allowance refuses for allowance, not plan", refuseAction(e, otherTrip.id)?.reason === "allowance");
+    check("plus: cannot book an uncovered trip", canBook(e, otherTrip.id) === false);
+    check("pass beats a spent allowance", canBook(e, trip.id) === true);
+    check("pass trip has nothing to refuse", refuseAction(e, trip.id) === null);
+
+    // Free refuses for the plan, which is a different sentence.
+    await db.delete(subscriptions).where(eq(subscriptions.userId, user.id));
+    e = await getEntitlement(user.id);
+    check("free refuses for plan, not allowance", refuseAction(e, otherTrip.id)?.reason === "plan");
 
     // Pro
     await setPlan("pro");

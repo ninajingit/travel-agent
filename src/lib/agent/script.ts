@@ -165,3 +165,56 @@ const SCRIPT: Record<Intent, (message: string, history: Turn[]) => ScriptResult>
       'Try "plan a long weekend under $3,000", "book the Lisbon flights", or "are there earlier flights I can get on standby?"',
     ].join("\n"),
 };
+
+// What the agent says when it is not allowed to act. The words live here with
+// the rest of the agent's voice; the decision is made by the caller, which is
+// the only side that can see the database.
+
+/**
+ * Descriptions are written for the activity log, after the fact, so they end
+ * with a confirmation code. Nothing has been booked here, so quoting one
+ * would be a lie dressed up as a detail.
+ */
+function withoutConfirmation(description: string) {
+  return description.replace(/,\s*[A-Z0-9][A-Z0-9-]{4,}$/, "");
+}
+
+/** Free asked to book: hand over the details and say what Plus would do. */
+export function actionNeedsMembership(action: AgentAction): string {
+  const money = `$${(action.amountCents / 100).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+  return [
+    "I cannot book on the free plan, so here is exactly what to book, and you can do it in a couple of minutes:",
+    "",
+    `${withoutConfirmation(action.description)}, ${money}.`,
+    "",
+    "Compare the same itinerary here: https://www.google.com/travel/flights",
+    "",
+    "Nothing is held and fares move, so sooner is better.",
+    "",
+    "If you would rather I did it, Plus is $29 a month. I book it, watch it, and move you when it slips. The Pricing page in your account menu has the button.",
+  ].join("\n");
+}
+
+/** A member who has spent the period's actions. Say the count and the date. */
+export function actionsSpent(options: {
+  used: number;
+  allowed: number;
+  resetsOn: string;
+  plan: "plus" | "pro";
+}): string {
+  const { used, allowed, resetsOn, plan } = options;
+  const more =
+    plan === "plus"
+      ? "Pro includes fifty a month, or a Concierge Pass covers one trip outright and its actions never count."
+      : "A Concierge Pass covers one trip outright, and its actions never count against this.";
+  return [
+    `That would be action ${used + 1} this period, and your plan includes ${allowed}. So I have stopped rather than run you past it.`,
+    "",
+    `The count resets on ${resetsOn}.`,
+    "",
+    `I can still plan, watch your trips, and answer anything. ${more}`,
+  ].join("\n");
+}

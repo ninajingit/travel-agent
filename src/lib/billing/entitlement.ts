@@ -43,10 +43,32 @@ export function hasPass(entitlement: Entitlement, tripId: number) {
   return entitlement.passes.some((pass) => pass.tripId === tripId);
 }
 
-/** May Mira book on this trip? Free cannot, unless the trip has a pass. */
+/**
+ * May Mira act on this trip?
+ *
+ * A pass is checked first and wins outright: its actions never count against
+ * an allowance, so a Plus member who has spent all ten can still be looked
+ * after on the trip they bought a pass for.
+ */
 export function canBook(entitlement: Entitlement, tripId: number | null) {
-  if (entitlement.plan !== "free") return entitlement.actionsLeft > 0;
-  return tripId !== null && hasPass(entitlement, tripId);
+  if (tripId !== null && hasPass(entitlement, tripId)) return true;
+  if (entitlement.plan === "free") return false;
+  return entitlement.actionsLeft > 0;
+}
+
+export type Refusal = { reason: "plan" | "allowance" };
+
+/**
+ * Why Mira cannot act, or null when it can. "plan" means this account never
+ * had the ability; "allowance" means it has run out for now. They need
+ * different answers, so they are told apart here rather than at each caller.
+ */
+export function refuseAction(
+  entitlement: Entitlement,
+  tripId: number | null,
+): Refusal | null {
+  if (canBook(entitlement, tripId)) return null;
+  return { reason: entitlement.plan === "free" ? "plan" : "allowance" };
 }
 
 /** May Mira rebook without being asked? Pro, or a pass on that trip. */

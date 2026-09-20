@@ -4,6 +4,7 @@ import { badRequest, notFound, parseId, readJsonObject, unauthorized } from "@/l
 import { getTrip, rebookSegment } from "@/db/queries/trips";
 import { reportFor } from "@/lib/agent/monitoring";
 import { recordTransaction } from "@/lib/agent/transactions";
+import { getEntitlement, refuseAction } from "@/lib/billing/entitlement";
 
 // The person accepts the suggested replacement for a delayed segment.
 export async function POST(request: Request, { params }: RouteContext<"/api/trips/[id]/rebook">) {
@@ -25,6 +26,27 @@ export async function POST(request: Request, { params }: RouteContext<"/api/trip
   const report = reportFor(segment);
   if (!report?.replacement) {
     return badRequest("There is no replacement to accept for this segment.");
+  }
+
+  // Rebooking spends money on this person's behalf, so it is an agent action
+  // like any other. Refused before anything is changed, never halfway.
+  const entitlement = await getEntitlement(user.id);
+  const refusal = refuseAction(entitlement, trip.id);
+  if (refusal) {
+    const resetsOn = entitlement.periodEnd.toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "long",
+      timeZone: "UTC",
+    });
+    return NextResponse.json(
+      {
+        error:
+          refusal.reason === "plan"
+            ? "Rebooking is not included on the free plan. Plus lets Mira move you when a flight slips."
+            : `You have used all ${entitlement.actionsAllowed} actions this period. The count resets on ${resetsOn}.`,
+      },
+      { status: 403 },
+    );
   }
 
   const result = await rebookSegment(trip.id, segment.id, {
