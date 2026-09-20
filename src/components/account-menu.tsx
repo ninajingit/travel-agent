@@ -15,9 +15,31 @@ export function AccountMenu() {
           href="/app/settings"
           labelIcon={<RobotIcon />}
         />
+        <UserButton.Link
+          label="Membership"
+          href="/app/membership"
+          labelIcon={<CardIcon />}
+        />
         <UserButton.Link label="Pricing" href="/pricing" labelIcon={<TagIcon />} />
       </UserButton.MenuItems>
     </UserButton>
+  );
+}
+
+function CardIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden
+    >
+      <rect x="1.5" y="3.5" width="13" height="9" rx="2" />
+      <path d="M1.5 6.5h13M4 10h3" />
+    </svg>
   );
 }
 
