@@ -37,17 +37,11 @@ const GAP_MS = 500;
 // is false (there is a thread, or the person has started typing) and for
 // people who asked their OS for reduced motion.
 function useTypewriter(active: boolean) {
-  const [text, setText] = useState("");
+  const [typed, setTyped] = useState("");
 
   useEffect(() => {
-    if (!active) {
-      setText("");
-      return;
-    }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setText(EXAMPLES[0]);
-      return;
-    }
+    if (!active) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let index = 0;
     let length = 0;
@@ -58,7 +52,7 @@ function useTypewriter(active: boolean) {
       const example = EXAMPLES[index];
       if (!erasing) {
         length += 1;
-        setText(example.slice(0, length));
+        setTyped(example.slice(0, length));
         if (length === example.length) {
           erasing = true;
           timer = setTimeout(step, HOLD_MS);
@@ -67,7 +61,7 @@ function useTypewriter(active: boolean) {
         }
       } else {
         length -= 1;
-        setText(example.slice(0, length));
+        setTyped(example.slice(0, length));
         if (length === 0) {
           erasing = false;
           index = (index + 1) % EXAMPLES.length;
@@ -77,11 +71,20 @@ function useTypewriter(active: boolean) {
         }
       }
     };
-    timer = setTimeout(step, GAP_MS);
+
+    // State changes only ever happen from a timer, never in the effect body.
+    timer = setTimeout(() => {
+      if (reduced) {
+        setTyped(EXAMPLES[0]);
+        return;
+      }
+      setTyped("");
+      timer = setTimeout(step, GAP_MS);
+    }, 0);
     return () => clearTimeout(timer);
   }, [active]);
 
-  return text;
+  return active ? typed : "";
 }
 
 export function ChatPanel({

@@ -3,6 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { seedDemoData } from "@/lib/demo";
 
 // Returns the users row for the signed-in person, creating it on their first
 // visit. Clerk owns the identity; this row is what the rest of the schema
@@ -17,11 +18,12 @@ export const ensureUser = cache(async () => {
   const existing = await db.query.users.findFirst({
     where: eq(users.clerkId, userId),
   });
-  if (existing) {
+  if (existing?.name) {
     return existing;
   }
 
-  // First visit: fetch the profile from Clerk once and store what we need.
+  // First visit, or a row with no name yet (email sign-ups before the name
+  // was required): fetch the profile from Clerk and store what we need.
   const profile = await currentUser();
   if (!profile) {
     throw new Error(`Clerk user ${userId} not found`);
@@ -35,12 +37,17 @@ export const ensureUser = cache(async () => {
   const name =
     [profile.firstName, profile.lastName].filter(Boolean).join(" ") || null;
 
-  const [created] = await db
+  const [row] = await db
     .insert(users)
     .values({ clerkId: userId, email, name })
     .onConflictDoUpdate({ target: users.clerkId, set: { email, name } })
     .returning();
-  return created;
+
+  // Everyone starts with the demo trips, chats, and activity.
+  if (!existing) {
+    await seedDemoData(row.id);
+  }
+  return row;
 });
 
 // For route handlers: the users row, or null when there is no session so the
