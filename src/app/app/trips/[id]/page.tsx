@@ -17,9 +17,24 @@ import { Card, EmptyState, PageHeader, Pill } from "@/components/ui";
 import { MonitoringPanel } from "@/components/monitoring-panel";
 import { reportFor } from "@/lib/agent/monitoring";
 import { getAgentSettings } from "@/db/queries/agent-settings";
-import { canAutoRebook, getEntitlement } from "@/lib/billing/entitlement";
+import { canAutoRebook, getEntitlement, hasPass } from "@/lib/billing/entitlement";
+import { CheckoutReturn } from "@/components/checkout-return";
+import { PassPurchase } from "@/components/pass-purchase";
 
-export default async function TripPage({ params }: PageProps<"/app/trips/[id]">) {
+// trips.ends_at is a calendar date string, not a timestamp.
+function formatDay(endsAt: string) {
+  return new Date(`${endsAt}T00:00:00Z`).toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+export default async function TripPage({
+  params,
+  searchParams,
+}: PageProps<"/app/trips/[id]">) {
   const user = await ensureUser();
   const id = parseId((await params).id);
   const trip = id ? await getTrip(user.id, id) : null;
@@ -33,16 +48,31 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
   const settings = delayed ? await getAgentSettings(user.id) : null;
   // Wanting auto-rebook and being allowed it are two different things. The
   // panel says which, rather than promising something the plan will refuse.
-  const entitlement = delayed ? await getEntitlement(user.id) : null;
-  const autoRebookAllowed = entitlement
-    ? canAutoRebook(entitlement, trip.id)
-    : false;
+  const entitlement = await getEntitlement(user.id);
+  const autoRebookAllowed = canAutoRebook(entitlement, trip.id);
+
+  const pass = entitlement.passes.find((p) => p.tripId === trip.id) ?? null;
+  const covered = hasPass(entitlement, trip.id);
+  // A pass buys the rest of a trip, so there is nothing to sell once it is over.
+  const finished = new Date(`${trip.endsAt}T23:59:59.999Z`) < new Date();
+
+  const query = await searchParams;
+  const sessionId =
+    query.checkout === "success" && typeof query.session_id === "string"
+      ? query.session_id
+      : null;
 
   return (
     <div>
       <Link href="/app/trips" className="text-sm text-muted hover:text-fg">
         ← My Trips
       </Link>
+
+      {sessionId && !covered && (
+        <div className="mt-4">
+          <CheckoutReturn sessionId={sessionId} kind="pass" />
+        </div>
+      )}
 
       <div className="mt-4">
         <PageHeader
@@ -61,6 +91,34 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
             </Pill>
           }
         />
+      </div>
+
+      <div className="mt-8">
+        {covered && pass ? (
+          <Card className="border-accent p-5">
+            <div className="flex flex-wrap items-center gap-3">
+              <Pill tone="accent">Covered</Pill>
+              <span className="font-semibold">Concierge Pass</span>
+            </div>
+            <p className="mt-2 text-sm text-muted">
+              Mira has this trip until {formatDay(pass.coversUntil)}: booking,
+              watching, and rebooking, inside the caps you set. Nothing it does
+              here counts against your allowance.
+            </p>
+          </Card>
+        ) : finished ? null : (
+          <Card className="p-5">
+            <p className="font-semibold">Concierge Pass, $150</p>
+            <p className="mt-1 max-w-xl text-sm text-muted">
+              {entitlement.plan === "free"
+                ? "Mira cannot book on the free plan. A pass puts it on this one trip: it books, watches, and rebooks you until you are home, with no membership."
+                : `Everything in Pro for this trip alone, until you are home. Nothing Mira does here counts against your ${entitlement.actionsAllowed} actions.`}
+            </p>
+            <div className="mt-4">
+              <PassPurchase tripId={trip.id} />
+            </div>
+          </Card>
+        )}
       </div>
 
       {delayed && report && settings ? (

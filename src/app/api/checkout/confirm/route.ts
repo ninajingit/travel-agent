@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { conciergePasses } from "@/db/schema";
 import { badRequest, notFound, readJsonObject, unauthorized } from "@/lib/api";
 import { signedInUser } from "@/lib/auth";
 import { getEntitlement } from "@/lib/billing/entitlement";
@@ -45,11 +48,17 @@ export async function POST(request: Request) {
 
   await syncCheckoutSession(session);
 
-  const entitlement = await getEntitlement(user.id);
-  const ready =
-    session.mode === "subscription"
-      ? entitlement.plan !== "free"
-      : entitlement.passes.length > 0;
+  if (session.mode === "subscription") {
+    const entitlement = await getEntitlement(user.id);
+    return NextResponse.json({ ready: entitlement.plan !== "free", plan: entitlement.plan });
+  }
 
-  return NextResponse.json({ ready, plan: entitlement.plan });
+  // For a pass, ask whether this session granted one. "Does the account have
+  // any pass" would answer yes to someone who already had one.
+  const [pass] = await db
+    .select({ id: conciergePasses.id })
+    .from(conciergePasses)
+    .where(eq(conciergePasses.stripeCheckoutSessionId, session.id))
+    .limit(1);
+  return NextResponse.json({ ready: Boolean(pass) });
 }

@@ -12,7 +12,14 @@ import { Card } from "@/components/ui";
  * membership is really there, so nobody who has just paid sits looking at a
  * page that says Free.
  */
-export function CheckoutReturn({ sessionId }: { sessionId: string }) {
+export function CheckoutReturn({
+  sessionId,
+  kind = "membership",
+}: {
+  sessionId: string;
+  kind?: "membership" | "pass";
+}) {
+  const noun = kind === "pass" ? "Concierge Pass" : "membership";
   const router = useRouter();
   const [slow, setSlow] = useState(false);
 
@@ -56,8 +63,8 @@ export function CheckoutReturn({ sessionId }: { sessionId: string }) {
       <p className="font-semibold">Payment received.</p>
       <p className="mt-1 text-sm text-muted">
         {slow
-          ? "Your membership is taking longer than usual to appear. It is paid for and it will show up here shortly."
-          : "Setting up your membership. This page updates on its own."}
+          ? `Your ${noun} is taking longer than usual to appear. It is paid for and it will show up here shortly.`
+          : `Setting up your ${noun}. This page updates on its own.`}
       </p>
     </Card>
   );
