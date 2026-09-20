@@ -2,11 +2,13 @@ import {
   boolean,
   date,
   integer,
+  numeric,
   pgEnum,
   pgTable,
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // One row per person who has signed in. clerk_id is the identity; everything
@@ -252,3 +254,38 @@ export const stripeEvents = pgTable("stripe_events", {
     .defaultNow(),
   processedAt: timestamp("processed_at", { withTimezone: true }),
 });
+
+// One row per currency we quote on the pricing page. Written by the daily
+// refresh, read by the page, because a page may not call Stripe.
+//
+// Both rates are kept. base_rate is Stripe's mid-market rate and is the one
+// we do arithmetic with. quoted_rate includes Stripe's 1% FX fee and is
+// stored only so the refresh can show its working; nothing displays it.
+// Neither is what the customer is charged: Adaptive Pricing re-converts at
+// checkout at roughly base_rate plus 4%, which is where ADAPTIVE_MARKUP in
+// the estimate comes from.
+//
+// Rates are the local currency expressed in USD, the direction the FX Quotes
+// API returns: 1 EUR = 1.14806 USD. To go the other way, divide.
+export const fxRates = pgTable(
+  "fx_rates",
+  {
+    id: serial("id").primaryKey(),
+    // ISO 4217, lower case, matching Stripe. "jpy", not "JPY".
+    currency: text("currency").notNull(),
+    // numeric, not a float. These get divided into prices and the result is
+    // shown to people, so binary rounding error is not acceptable. Drizzle
+    // hands these back as strings for the same reason.
+    baseRate: numeric("base_rate", { precision: 20, scale: 10 }).notNull(),
+    quotedRate: numeric("quoted_rate", { precision: 20, scale: 10 }).notNull(),
+    // The fx_quote this came from, so a number on the page can be traced back
+    // to one Stripe object.
+    stripeFxQuoteId: text("stripe_fx_quote_id").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // One row per currency. The refresh upserts on this, so a retry that runs
+  // twice in the same minute leaves one row rather than two.
+  (table) => [uniqueIndex("fx_rates_currency_key").on(table.currency)],
+);
