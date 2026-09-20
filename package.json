@@ -11,7 +11,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
-    "stripe:catalog": "tsx --env-file=.env.local scripts/stripe-catalog.ts"
+    "stripe:catalog": "tsx --env-file=.env.local scripts/stripe-catalog.ts",
+    "stripe:webhook-check": "tsx --env-file=.env.local scripts/stripe-webhook-check.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.4",
