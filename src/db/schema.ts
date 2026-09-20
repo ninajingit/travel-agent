@@ -145,6 +145,15 @@ export const transactionKind = pgEnum("transaction_kind", [
   "cancellation",
 ]);
 
+// Who a cancellation was for. Only set on cancellations.
+//
+// It decides whether the cancellation costs an agent action. A traveller
+// changing their mind is Mira doing a second piece of work for them, so it
+// counts. Mira undoing its own mistake is not work the traveller asked for,
+// so the booking and its reversal together cost the one action the booking
+// already cost.
+export const cancelledBy = pgEnum("cancelled_by", ["traveller", "mira"]);
+
 // A record that the agent did something with money on a person's behalf:
 // booked, rebooked, or cancelled. Written by the agent at the moment it acts.
 export const agentTransactions = pgTable("agent_transactions", {
@@ -160,6 +169,7 @@ export const agentTransactions = pgTable("agent_transactions", {
   // The charge that paid for this, once Mira pays for what it books. Null on
   // everything written before Phase B, and on anything a supplier refunds.
   stripePaymentIntentId: text("stripe_payment_intent_id"),
+  cancelledBy: cancelledBy("cancelled_by"),
   occurredAt: timestamp("occurred_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

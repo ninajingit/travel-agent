@@ -134,6 +134,9 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
                   <div className="flex flex-wrap items-center gap-2">
                     <Pill tone={transactionKindTone(row.kind)}>{transactionKindLabel(row.kind)}</Pill>
                     {onPass && <Pill tone="violet">Covered by pass</Pill>}
+                    {row.cancelledBy === "mira" && (
+                      <Pill tone="neutral">Mira&rsquo;s mistake, not counted</Pill>
+                    )}
                     {row.tripId && row.destination && (
                       <Link href={`/app/trips/${row.tripId}`} className="text-sm text-muted hover:text-fg">
                         {row.destination} trip →

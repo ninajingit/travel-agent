@@ -17,12 +17,14 @@ export function CancelBooking({ transactionId }: { transactionId: number }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function cancel() {
+  async function cancel(cancelledBy: "traveller" | "mira") {
     setBusy(true);
     setError(null);
     try {
       const response = await fetch(`/api/transactions/${transactionId}/cancel`, {
         method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cancelledBy }),
       });
       const body = await response.json();
       if (!response.ok) {
@@ -50,20 +52,40 @@ export function CancelBooking({ transactionId }: { transactionId: number }) {
     );
   }
 
+  // Two buttons rather than one, because the answer changes what this costs.
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-sm text-muted">Cancel this and refund it?</span>
-      <Button variant="secondary" onClick={cancel} disabled={busy} className="px-3 py-1.5">
-        {busy ? "Refunding…" : "Yes, refund"}
-      </Button>
-      <button
-        type="button"
-        onClick={() => setAsking(false)}
-        className="text-sm text-muted underline hover:text-fg"
-      >
-        Keep it
-      </button>
-      {error && <ErrorText className="w-full">{error}</ErrorText>}
+    <div className="rounded-control border border-border bg-bg p-3">
+      <p className="text-sm font-medium">Cancel this and refund it. Why?</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          onClick={() => cancel("traveller")}
+          disabled={busy}
+          className="px-3 py-1.5"
+        >
+          {busy ? "Refunding…" : "I changed my mind"}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => cancel("mira")}
+          disabled={busy}
+          className="px-3 py-1.5"
+        >
+          {busy ? "Refunding…" : "Mira got this wrong"}
+        </Button>
+        <button
+          type="button"
+          onClick={() => setAsking(false)}
+          className="text-sm text-muted underline hover:text-fg"
+        >
+          Keep it
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        Either way you get the money back. Changing your mind uses one of your
+        actions; Mira putting its own mistake right does not.
+      </p>
+      {error && <ErrorText className="mt-2">{error}</ErrorText>}
     </div>
   );
 }

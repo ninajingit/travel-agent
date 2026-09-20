@@ -2,18 +2,29 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { agentTransactions } from "@/db/schema";
-import { notFound, parseId, unauthorized } from "@/lib/api";
+import { badRequest, notFound, parseId, readJsonObject, unauthorized } from "@/lib/api";
 import { signedInUser } from "@/lib/auth";
 import { recordTransaction } from "@/lib/agent/transactions";
 import { refundBooking, refundedIntents } from "@/lib/billing/refund";
 
 // Cancels something Mira booked and gives the money back.
+const CAUSES = ["traveller", "mira"] as const;
+
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: RouteContext<"/api/transactions/[id]/cancel">,
 ) {
   const user = await signedInUser();
   if (!user) return unauthorized();
+
+  // Why matters, not just that. A traveller changing their mind is a second
+  // piece of work and costs an action; Mira putting its own mistake right
+  // does not.
+  const body = await readJsonObject(request);
+  const cause = body?.cancelledBy;
+  if (!CAUSES.includes(cause as (typeof CAUSES)[number])) {
+    return badRequest(`cancelledBy must be one of: ${CAUSES.join(", ")}.`);
+  }
 
   const id = parseId((await params).id);
   if (!id) return notFound();
@@ -63,6 +74,7 @@ export async function POST(
     currency: transaction.currency,
     description: `Cancelled: ${transaction.description}`,
     stripePaymentIntentId: transaction.stripePaymentIntentId,
+    cancelledBy: cause as (typeof CAUSES)[number],
   });
 
   return NextResponse.json({ transaction: row, refundId: refund.refundId });

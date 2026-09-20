@@ -176,8 +176,9 @@ export default async function MembershipPage({
 
       <h2 className="mt-10 font-display text-xl font-bold">Agent actions</h2>
       <p className="mt-1 text-sm text-muted">
-        An action is a booking, a rebooking, or a cancellation Mira carries out.
-        Planning and watching are never counted.
+        An action is a booking, a rebooking, or a cancellation Mira carries
+        out. Planning and watching are never counted, and neither is Mira
+        undoing its own mistake.
       </p>
 
       <Card className="mt-4 p-6">

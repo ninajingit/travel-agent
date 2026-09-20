@@ -141,7 +141,8 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
             <dd className="mt-1 text-muted">
               One thing Mira does with money on your behalf: a booking, a
               rebooking, or a cancellation. Asking questions, planning, and
-              watching are not actions and are never counted.
+              watching are not actions and are never counted. Nor is a
+              cancellation Mira makes to put its own mistake right.
             </dd>
           </div>
           <div>

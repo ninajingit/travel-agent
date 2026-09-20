@@ -171,6 +171,8 @@ export async function getEntitlement(userId: number): Promise<Entitlement> {
     .select({
       tripId: agentTransactions.tripId,
       occurredAt: agentTransactions.occurredAt,
+      kind: agentTransactions.kind,
+      cancelledBy: agentTransactions.cancelledBy,
     })
     .from(agentTransactions)
     .where(
@@ -181,6 +183,14 @@ export async function getEntitlement(userId: number): Promise<Entitlement> {
       ),
     );
 
+  // Undoing Mira's own mistake is not work the traveller asked for, so the
+  // booking and its reversal together cost the one action the booking
+  // already cost. A traveller changing their mind is a second piece of work
+  // and counts (D29).
+  const asked = actions.filter(
+    (action) => !(action.kind === "cancellation" && action.cancelledBy === "mira"),
+  );
+
   // Actions on a pass-covered trip never count against a membership
   // allowance (D5).
   const coverage: Coverage = new Map(
@@ -189,7 +199,7 @@ export async function getEntitlement(userId: number): Promise<Entitlement> {
       { from: row.purchasedAt, to: endOfTripDay(row.endsAt) },
     ]),
   );
-  const actionsUsed = actions.filter(
+  const actionsUsed = asked.filter(
     (action) => !isCovered(coverage, action.tripId, action.occurredAt),
   ).length;
 

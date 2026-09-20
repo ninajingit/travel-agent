@@ -9,6 +9,8 @@ export type TransactionInput = {
   description: string;
   /** The charge that paid for it, when Mira paid rather than the person. */
   stripePaymentIntentId?: string | null;
+  /** On a cancellation: who it was for. Decides whether it costs an action. */
+  cancelledBy?: "traveller" | "mira" | null;
 };
 
 // Called by the agent when it books, rebooks, or cancels. One row per action.
