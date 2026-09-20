@@ -174,7 +174,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     // Re-read rather than trust the summary on the session, and so that a
     // subscription.created that arrived before the customer was linked gets
     // written now.
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe().subscriptions.retrieve(subscriptionId);
     await upsertSubscription(subscription);
     return;
   }
@@ -221,7 +221,7 @@ function subscriptionIdOnInvoice(invoice: Stripe.Invoice): string | null {
 async function handleInvoice(invoice: Stripe.Invoice) {
   const subscriptionId = subscriptionIdOnInvoice(invoice);
   if (!subscriptionId) return;
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const subscription = await stripe().subscriptions.retrieve(subscriptionId);
   await upsertSubscription(subscription);
 }
 

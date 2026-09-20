@@ -58,7 +58,7 @@ let cached: Map<LookupKey, string> | null = null;
 export async function resolvePrices(): Promise<Map<LookupKey, string>> {
   if (cached) return cached;
 
-  const { data } = await stripe.prices.list({
+  const { data } = await stripe().prices.list({
     lookup_keys: [...ALL_LOOKUP_KEYS],
     active: true,
     limit: 100,

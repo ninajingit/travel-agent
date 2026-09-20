@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
   let event;
   try {
-    event = await stripe.webhooks.constructEventAsync(body, signature, secret);
+    event = await stripe().webhooks.constructEventAsync(body, signature, secret);
   } catch (error) {
     // Unsigned or tampered. 400 so Stripe stops rather than retrying forever.
     const message = error instanceof Error ? error.message : "Bad signature.";

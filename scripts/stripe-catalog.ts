@@ -20,7 +20,7 @@ function mode() {
 }
 
 async function activePrices() {
-  const { data } = await stripe.prices.list({
+  const { data } = await stripe().prices.list({
     active: true,
     limit: 100,
     expand: ["data.product"],
@@ -69,7 +69,7 @@ async function sync() {
     // duplicate: these were created by hand before the keys existed.
     const candidate = prices.find((p) => !p.lookup_key && matches(p, entry));
     if (candidate) {
-      await stripe.prices.update(candidate.id, {
+      await stripe().prices.update(candidate.id, {
         lookup_key: entry.lookupKey,
         transfer_lookup_key: true,
       });
@@ -77,8 +77,8 @@ async function sync() {
       continue;
     }
 
-    const product = await stripe.products.create({ name: entry.productName });
-    const price = await stripe.prices.create({
+    const product = await stripe().products.create({ name: entry.productName });
+    const price = await stripe().prices.create({
       product: product.id,
       currency: "usd",
       unit_amount: entry.unitAmount,
