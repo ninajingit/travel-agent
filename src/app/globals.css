@@ -61,6 +61,12 @@
   }
 }
 
+html {
+  /* Reserve the scrollbar's width on every page so content does not shift
+     left when a page grows long enough to scroll. */
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--bg);
   color: var(--fg);
