@@ -31,7 +31,7 @@ async function main() {
   try {
     // A brand new account: Free.
     await seedDemoData(user.id, "free");
-    let s = await snapshot(user.id);
+    const s = await snapshot(user.id);
     console.log("FREE");
     check("saved places are all there", s.places.length === 3);
     check("both trips exist", s.trips.length === 2);
