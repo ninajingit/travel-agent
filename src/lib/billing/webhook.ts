@@ -154,7 +154,15 @@ export async function upsertSubscription(subscription: Stripe.Subscription) {
   }
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+/**
+ * Grant whatever a completed Checkout Session paid for.
+ *
+ * Shared by the webhook and by the return-from-checkout route, so a person
+ * who beats the webhook home still gets what they bought. Safe to run twice:
+ * the customer link is a no-op when unchanged, subscriptions upsert, and the
+ * pass insert collides on the session id.
+ */
+export async function syncCheckoutSession(session: Stripe.Checkout.Session) {
   const customerId = idOf(session.customer);
   const user = await findUser(customerId, session.metadata);
   if (!user) return;
@@ -230,7 +238,7 @@ async function handleInvoice(invoice: Stripe.Invoice) {
 export async function handleEvent(event: Stripe.Event) {
   switch (event.type) {
     case "checkout.session.completed":
-      await handleCheckoutCompleted(event.data.object);
+      await syncCheckoutSession(event.data.object);
       return;
 
     case "customer.subscription.created":

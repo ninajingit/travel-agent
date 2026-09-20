@@ -57,7 +57,7 @@ export async function membershipCheckout(user: User, offer: "plus" | "pro") {
     mode: "subscription",
     customer,
     line_items: [{ price: await priceIdFor(offer), quantity: 1 }],
-    success_url: `${base}/app?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${base}/app/membership?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/pricing?checkout=cancelled`,
     client_reference_id: String(user.id),
     metadata,

@@ -4,6 +4,7 @@ import { getEntitlement, type Entitlement } from "@/lib/billing/entitlement";
 import { listTrips } from "@/db/queries/trips";
 import { formatMoney } from "@/lib/format";
 import { Card, ButtonLink, EmptyState, PageHeader, Pill } from "@/components/ui";
+import { CheckoutReturn } from "@/components/checkout-return";
 import { PortalButton } from "@/components/portal-button";
 
 const PLAN_NAME = { free: "Free", plus: "Plus", pro: "Pro" } as const;
@@ -42,13 +43,23 @@ function statusLine(entitlement: Entitlement) {
   return `Renews on ${renews}.`;
 }
 
-export default async function MembershipPage() {
+export default async function MembershipPage({
+  searchParams,
+}: PageProps<"/app/membership">) {
   const user = await ensureUser();
   const entitlement = await getEntitlement(user.id);
   const trips = await listTrips(user.id);
   const tripName = new Map(trips.map((trip) => [trip.id, trip.destination.name]));
 
   const isFree = entitlement.plan === "free";
+
+  // Just back from Stripe. If the mirror already has the membership the
+  // webhook won the race and there is nothing to wait for; otherwise confirm
+  // the session so this page does not greet a paying customer with "Free".
+  const params = await searchParams;
+  const justPaid = params.checkout === "success";
+  const sessionId = typeof params.session_id === "string" ? params.session_id : null;
+  const waiting = justPaid && isFree && sessionId !== null;
   const used = entitlement.actionsUsed;
   const allowed = entitlement.actionsAllowed;
   const pct = allowed > 0 ? Math.min(100, Math.round((used / allowed) * 100)) : 0;
@@ -59,6 +70,18 @@ export default async function MembershipPage() {
         title="Membership"
         intro="What Mira is allowed to do for you, and what it costs."
       />
+
+      {waiting && sessionId && <CheckoutReturn sessionId={sessionId} />}
+
+      {justPaid && !isFree && (
+        <Card className="mt-8 border-accent p-5">
+          <p className="font-semibold">You are on {PLAN_NAME[entitlement.plan]}.</p>
+          <p className="mt-1 text-sm text-muted">
+            Mira can book and watch trips for you from now on. The receipt is in
+            your email.
+          </p>
+        </Card>
+      )}
 
       {entitlement.pastDue && (
         <Card className="mt-8 border-warn p-5">
