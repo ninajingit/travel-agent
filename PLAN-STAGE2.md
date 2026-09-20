@@ -96,17 +96,18 @@ Commit prefix `pay(NN)`. One concern per commit; stop for review after each.
 | 36 | the Free product and its $0 price are archived; Free is the absence of a subscription (D25) | catalog syncs to three keys |
 | 37 | schema: `stripe_customer_id`, `trial_used_at`, `subscriptions`, `concierge_passes`, `stripe_events` | migration applies on dev and prod |
 | 38 | webhook route: signature check, idempotent event store, handlers for `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed` | `stripe trigger` writes rows; replaying the same event changes nothing |
-| 39 | checkout: `POST /api/checkout` for `plus`, `pro`, or `pass` (with `tripId`); creates or reuses the Stripe customer; refuses with 409 and a Portal link if a subscription is already active or trialing | test card completes; subscription row appears via webhook; a second call returns 409 |
-| 40 | entitlement: `getEntitlement(userId)` from the mirror tables plus this period's `agent_transactions` | free, plus, pro, and pass cases return the right numbers |
-| 41 | membership page `/app/membership` in the avatar menu: plan, renewal date, actions used, passes, buttons to the Customer Portal via `POST /api/billing/portal` | in browser, all three states |
-| 42 | pricing page goes live: each card gets a button; signed-out goes through sign-in and back to checkout; signed-in shows the current plan | click Plus, land on Stripe Checkout |
-| 43 | return from checkout: success page confirms the session server-side and shows a waiting state if the webhook has not landed | refresh after purchase shows the plan |
-| 44 | gates: chat booking on Free replies with links and an offer to start Plus; rebook on Free is refused; actions past the allowance are refused with the count | Free cannot book, Plus can until ten |
-| 45 | auto-rebook requires Pro or a pass on the trip; settings page explains why the toggle is off | toggle disabled on Free and Plus |
-| 46 | activity: "3 of 10 actions this period", period from the subscription, pass-covered actions labelled and not counted | matches rows |
-| 47 | Concierge Pass on the trip page: buy, Covered badge, dates covered | purchase, trip shows Covered, its actions are free |
-| 48 | lifecycle: `past_due` banner with a fix-your-card link, `canceled` drops to Free at period end, "ends on" copy when `cancel_at_period_end` | `stripe trigger` scenarios |
-| 49 | trial: Checkout starts Pro with a ten-day trial once per person; `trialing` grants Pro; membership page and pricing page say when the first charge lands; `customer.subscription.trial_will_end` is handled | a new account gets Pro for ten days; the same account cannot start a second trial |
+| 39 | the Stripe client is built on first use, so a missing key cannot fail the whole build | `next build` succeeds with STRIPE_SECRET_KEY unset |
+| 40 | checkout: `POST /api/checkout` for `plus`, `pro`, or `pass` (with `tripId`); creates or reuses the Stripe customer; refuses with 409 and a Portal link if a subscription is already active or trialing | test card completes; subscription row appears via webhook; a second call returns 409 |
+| 41 | entitlement: `getEntitlement(userId)` from the mirror tables plus this period's `agent_transactions` | free, plus, pro, and pass cases return the right numbers |
+| 42 | membership page `/app/membership` in the avatar menu: plan, renewal date, actions used, passes, buttons to the Customer Portal via `POST /api/billing/portal` | in browser, all three states |
+| 43 | pricing page goes live: each card gets a button; signed-out goes through sign-in and back to checkout; signed-in shows the current plan | click Plus, land on Stripe Checkout |
+| 44 | return from checkout: success page confirms the session server-side and shows a waiting state if the webhook has not landed | refresh after purchase shows the plan |
+| 45 | gates: chat booking on Free replies with links and an offer to start Plus; rebook on Free is refused; actions past the allowance are refused with the count | Free cannot book, Plus can until ten |
+| 46 | auto-rebook requires Pro or a pass on the trip; settings page explains why the toggle is off | toggle disabled on Free and Plus |
+| 47 | activity: "3 of 10 actions this period", period from the subscription, pass-covered actions labelled and not counted | matches rows |
+| 48 | Concierge Pass on the trip page: buy, Covered badge, dates covered | purchase, trip shows Covered, its actions are free |
+| 49 | lifecycle: `past_due` banner with a fix-your-card link, `canceled` drops to Free at period end, "ends on" copy when `cancel_at_period_end` | `stripe trigger` scenarios |
+| 50 | trial: Checkout starts Pro with a ten-day trial once per person; `trialing` grants Pro; membership page and pricing page say when the first charge lands; `customer.subscription.trial_will_end` is handled | a new account gets Pro for ten days; the same account cannot start a second trial |
 
 ### Notes on the trial
 
@@ -132,7 +133,7 @@ Commit prefix `pay(NN)`. One concern per commit; stop for review after each.
 ### Notes on the allowance
 
 - The period is the subscription's billing period, read from the mirror.
-  The Activity page counts a UTC calendar month today; commit 46 changes it.
+  The Activity page counts a UTC calendar month today; commit 47 changes it.
 - Free has no period, so it has no allowance and no count to show.
 - Actions on a pass-covered trip never count, whatever the plan.
 - A Pro to Plus downgrade is scheduled for period end, so nobody wakes up
@@ -147,12 +148,12 @@ agent-initiated variable charges, on one saved card, in one readable history.
 
 | # | Commit | Gate |
 |---|--------|------|
-| 50 | Checkout saves the card for later off-session use; consent copy says Mira will charge it for bookings inside your caps | payment method attached to the customer |
-| 51 | `recordTransaction` charges an off-session PaymentIntent for the booking amount, stores `stripe_payment_intent_id`; a card that needs authentication produces a message with a link rather than a silent failure | charge appears on the customer; 3DS test card produces the message |
-| 52 | cancellations refund | refund appears in Stripe |
-| 53 | membership page shows one history: invoices and booking charges together | matches Stripe |
+| 51 | Checkout saves the card for later off-session use; consent copy says Mira will charge it for bookings inside your caps | payment method attached to the customer |
+| 52 | `recordTransaction` charges an off-session PaymentIntent for the booking amount, stores `stripe_payment_intent_id`; a card that needs authentication produces a message with a link rather than a silent failure | charge appears on the customer; 3DS test card produces the message |
+| 53 | cancellations refund | refund appears in Stripe |
+| 54 | membership page shows one history: invoices and booking charges together | matches Stripe |
 
-Note for commit 50: subscription-mode Checkout already saves the card for
+Note for commit 51: subscription-mode Checkout already saves the card for
 subsequent invoices. Charging it for a booking is a different purpose, so it
 needs its own consent, not a reuse of the subscription mandate.
 
