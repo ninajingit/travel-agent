@@ -64,6 +64,13 @@
       "when": 1789885557773,
       "tag": "0008_booking_consent",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789885887071,
+      "tag": "0009_transaction_payment",
+      "breakpoints": true
     }
   ]
 }

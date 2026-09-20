@@ -157,6 +157,9 @@ export const agentTransactions = pgTable("agent_transactions", {
   amountCents: integer("amount_cents").notNull(),
   currency: text("currency").notNull().default("USD"),
   description: text("description").notNull(),
+  // The charge that paid for this, once Mira pays for what it books. Null on
+  // everything written before Phase B, and on anything a supplier refunds.
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
   occurredAt: timestamp("occurred_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

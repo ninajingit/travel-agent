@@ -7,6 +7,8 @@ export type TransactionInput = {
   amountCents: number;
   currency?: string;
   description: string;
+  /** The charge that paid for it, when Mira paid rather than the person. */
+  stripePaymentIntentId?: string | null;
 };
 
 // Called by the agent when it books, rebooks, or cancels. One row per action.

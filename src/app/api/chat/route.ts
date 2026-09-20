@@ -8,8 +8,18 @@ import {
   unauthorized,
 } from "@/lib/api";
 import { getChannel, WebChannel } from "@/lib/channels";
-import { actionNeedsMembership, actionsSpent, reply } from "@/lib/agent/script";
+import {
+  CAP_APPROVAL_PROMPT,
+  actionNeedsMembership,
+  actionsSpent,
+  cardDeclined,
+  needsAuthentication,
+  needsBookingConsent,
+  overCap,
+  reply,
+} from "@/lib/agent/script";
 import { getEntitlement, refuseAction } from "@/lib/billing/entitlement";
+import { chargeForBooking } from "@/lib/billing/charge";
 import { recordTransaction } from "@/lib/agent/transactions";
 import {
   appendMessage,
@@ -85,6 +95,49 @@ export async function POST(request: Request) {
     }
   }
 
+  // The plan allows it. Now the money has to move before the booking exists,
+  // so a failure here leaves nothing booked and nothing recorded.
+  //
+  // A "yes" straight after a cap question means yes to that spend. The same
+  // trick the script already uses to know a "yes" follows an offer: look at
+  // what the agent last said.
+  const lastAgentSaid =
+    [...conversation.messages].reverse().find((m) => m.role === "agent")?.body ?? "";
+  const approvedOverCap = lastAgentSaid.includes(CAP_APPROVAL_PROMPT);
+
+  let paymentIntentId: string | null = null;
+  if (action) {
+    const charge = await chargeForBooking(
+      {
+        user,
+        tripId: conversation.tripId ?? null,
+        amountCents: action.amountCents,
+        description: action.description,
+      },
+      { skipCaps: approvedOverCap },
+    );
+
+    if (charge.ok) {
+      paymentIntentId = charge.paymentIntentId;
+    } else {
+      replyBody =
+        charge.reason === "cap"
+          ? overCap({
+              cap: charge.cap,
+              amountCents: action.amountCents,
+              limitCents: charge.limitCents,
+              spentCents: charge.spentCents,
+              description: action.description,
+            })
+          : charge.reason === "authentication"
+            ? needsAuthentication(charge.url, action.amountCents)
+            : charge.reason === "consent"
+              ? needsBookingConsent()
+              : cardDeclined();
+      action = undefined;
+    }
+  }
+
   // Through the channel abstraction, even though for web the round trip is
   // this same HTTP response.
   const web = getChannel("web") as WebChannel;
@@ -100,6 +153,7 @@ export async function POST(request: Request) {
     await recordTransaction(user.id, {
       tripId: conversation.tripId ?? null,
       ...action,
+      stripePaymentIntentId: paymentIntentId,
     });
   }
 

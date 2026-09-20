@@ -41,6 +41,7 @@ export function MonitoringPanel(props: Props) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmUrl, setConfirmUrl] = useState<string | null>(null);
 
   async function accept() {
     setBusy(true);
@@ -53,6 +54,7 @@ export function MonitoringPanel(props: Props) {
       });
       const data = await response.json();
       if (!response.ok) {
+        setConfirmUrl(typeof data.confirmUrl === "string" ? data.confirmUrl : null);
         throw new Error(data.error ?? `Request failed (${response.status}).`);
       }
       router.refresh();
@@ -97,7 +99,16 @@ export function MonitoringPanel(props: Props) {
               {autoRebookNote(props.autoRebook, props.autoRebookAllowed)}
             </span>
           </div>
-          {error && <ErrorText className="mt-3">{error}</ErrorText>}
+          {error && (
+            <div className="mt-3">
+              <ErrorText>{error}</ErrorText>
+              {confirmUrl && (
+                <a href={confirmUrl} className="text-sm underline hover:text-fg">
+                  Confirm the payment with your bank
+                </a>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted">

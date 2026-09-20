@@ -218,3 +218,75 @@ export function actionsSpent(options: {
     `I can still plan, watch your trips, and answer anything. ${more}`,
   ].join("\n");
 }
+
+// What the agent says when the money does not move. Same rule as the plan
+// refusals: the words live here, the decision is made by the caller.
+
+function money(cents: number) {
+  return `$${(cents / 100).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+/** The phrase that makes a "yes" mean "spend over my cap". */
+export const CAP_APPROVAL_PROMPT = "Say yes and I will go ahead";
+
+const CAP_WORDS = {
+  booking: "per-booking cap",
+  trip: "cap for this trip",
+  month: "cap for this month",
+} as const;
+
+/**
+ * Over a cap. The caps are the most Mira may spend without asking, so this
+ * asks. It repeats the amount and the limit so a yes is an informed one.
+ */
+export function overCap(options: {
+  cap: "booking" | "trip" | "month";
+  amountCents: number;
+  limitCents: number;
+  spentCents: number;
+  description: string;
+}): string {
+  const { cap, amountCents, limitCents, spentCents, description } = options;
+  const context =
+    cap === "booking"
+      ? `That is ${money(amountCents)}, and your ${CAP_WORDS[cap]} is ${money(limitCents)}.`
+      : `That is ${money(amountCents)}, which would take your ${CAP_WORDS[cap]} to ${money(spentCents + amountCents)} against a limit of ${money(limitCents)}.`;
+
+  return [
+    `I have not booked this. ${context}`,
+    "",
+    withoutConfirmation(description),
+    "",
+    `Your caps are there so I check before spending past them. ${CAP_APPROVAL_PROMPT}, or raise the cap in your agent settings.`,
+  ].join("\n");
+}
+
+/** The bank wants the person present. Hand them the link, not an error. */
+export function needsAuthentication(url: string, amountCents: number): string {
+  return [
+    `Your bank wants to check this one with you before it goes through. Nothing is booked and nothing has been charged.`,
+    "",
+    `Confirm the ${money(amountCents)} here and I will book it straight away: ${url}`,
+  ].join("\n");
+}
+
+/** The card said no. */
+export function cardDeclined(): string {
+  return [
+    "Your card was declined, so I have not booked anything.",
+    "",
+    "Updating it under Membership takes a moment, and I will still be here. If the card is fine, your bank may just want a word with you first.",
+  ].join("\n");
+}
+
+/** No agreement on file to charge for bookings. */
+export function needsBookingConsent(): string {
+  return [
+    "I do not have your agreement to charge your card for bookings yet, so I have not booked this.",
+    "",
+    "Starting a membership or buying a Concierge Pass sets that up, and both say exactly what I may spend and when.",
+  ].join("\n");
+}
