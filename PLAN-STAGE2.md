@@ -1,14 +1,47 @@
 # PLAN-STAGE2.md
 
-Stage 2: add payments to Mira with Stripe. Commits 33 onward.
+Stage 2: payments for Mira with Stripe. **Complete.** Commits 33 to 55,
+shipped 2026-09-19 and 2026-09-20.
 
-Stage 1 built the product with no billing awareness. This stage retrofits
-memberships (Plus, Pro), a one-off Concierge Pass, and the gates that make the
-pricing page true. The open decisions were settled on 2026-09-19 and are
-recorded at the bottom.
+Stage 1 built the product with no billing awareness. This stage retrofitted
+memberships (Plus, Pro), a one-off Concierge Pass, a ten-day Pro trial, the
+gates that make the pricing page true, and then, in Phase B, Mira paying for
+what it books.
 
 Commit 32 checked in the first draft of this plan. It also said it would
-replace CLAUDE.md's Stage 1 no-billing rule and did not; commit 33 does that.
+replace CLAUDE.md's Stage 1 no-billing rule and did not; commit 33 did that.
+
+Every gate below was run. The plan is kept as written, with the tables
+marking what shipped, because the gap between the plan and the build is the
+interesting part.
+
+## How it differed from the plan
+
+- **Commit numbers moved twice.** 36 was meant to be the schema and became
+  the reversal of a Free product created in the dashboard (D25). 39 was meant
+  to be entitlement and became an urgent fix: the webhook route's import of
+  the Stripe client threw at build time and failed the deploy of the whole
+  site. Everything after each shifted by one.
+- **There are two commits numbered 40**, one renumbering the plan and one
+  adding the checkout check. An amend that should have replaced a commit
+  added one instead. Left alone rather than rewritten.
+- **Enforcing the spending caps was not in the plan at all.** It turned out
+  they had never been enforced anywhere, in Stage 1 or Phase A. Phase B could
+  not honestly move money without them, so commit 53 does it (D26).
+- **Several first-draft checks passed vacuously** and had to be rewritten to
+  assert on something real. `subscription_data` is a create-only parameter
+  and is not on a retrieved Checkout Session, so asserting on it reads
+  undefined and passes whatever the code does. The trial check now asserts on
+  what Checkout will charge today.
+- **Refunds ended up on the Activity page**, next to the charge being
+  reversed, rather than anywhere the plan imagined.
+
+## Not covered
+
+Webhook signature verification has never run over HTTP. Everything else was
+exercised against real Stripe objects, but this one needs `stripe listen` and
+the local signing secret it prints. The idempotency half of that commit's
+gate was covered separately by `npm run stripe:webhook-check`.
 
 ## What we are selling
 
@@ -60,9 +93,12 @@ Pro price. Card collected up front. One per person. Decided 2026-09-19.
 
 ## Schema additions
 
+As built, across migrations 0007 to 0009.
+
 ```
 users               + stripe_customer_id (nullable, unique)
                     + trial_used_at (nullable)
+                    + booking_consent_at (nullable)   [Phase B]
 
 subscriptions       id, user_id, stripe_subscription_id, plan (plus | pro),
                     status (Stripe's status string, including trialing),
@@ -77,8 +113,15 @@ concierge_passes    id, user_id, trip_id, stripe_checkout_session_id,
 stripe_events       id (Stripe event id), type, received_at, processed_at
 ```
 
-`agent_transactions` is unchanged in Phase A. Phase B adds
-`stripe_payment_intent_id`.
+`agent_transactions` is unchanged in Phase A. Phase B added
+`stripe_payment_intent_id`, and nothing else: it is still a product record,
+with no billable flag and no plan reference.
+
+A cancellation row carries a **negative** amount and the **same**
+`stripe_payment_intent_id` as the booking it reverses. That is the link
+between the two without another column, it is what stops a charge being
+refunded twice, and it makes the Activity total read as what a period cost
+rather than what passed through it.
 
 Note the existing column names the migration has to live with:
 `agent_transactions.kind` and `.occurred_at` (there is no `created_at`), and
@@ -86,7 +129,7 @@ Note the existing column names the migration has to live with:
 
 ## Phase A: memberships and the pass
 
-Commit prefix `pay(NN)`. One concern per commit; stop for review after each.
+Commits 33 to 50. **All shipped, all gates run.**
 
 | # | Commit | Gate |
 |---|--------|------|
@@ -142,13 +185,15 @@ Commit prefix `pay(NN)`. One concern per commit; stop for review after each.
 
 ## Phase B: Mira charges the card for what it books
 
-Decided on 2026-09-20, after Phase A shipped. This is the "two shapes of
+Decided and built on 2026-09-20, after Phase A shipped. This is the "two shapes of
 money on one customer" problem: a membership invoice and agent-initiated
 variable charges, on one saved card, in one readable history.
 
 It is also where the persona's stated company-ending risk lives. An agent
 with a card on file that charges $340 nobody can account for is the failure
 mode; every decision below is chosen against it.
+
+Commits 51 to 55. **All shipped, all gates run.**
 
 | # | Commit | Gate |
 |---|--------|------|
@@ -177,31 +222,49 @@ Account `acct_1UHQUoIpD2s73ETA`, "Llama Inc. sandbox". Production host
 | Webhook endpoint | `we_1UHbroIpD2s73ETADIw57CAF` |
 
 The three prices were created by hand; commit 35 gave them their lookup keys
-(`plus_monthly`, `pro_monthly`, `concierge_pass`). The Portal allows switching between Plus and Pro, prorates
-upgrades, schedules decreases for period end, cancels at period end, shows
-invoices, and ends a trial on plan change. The webhook endpoint points at a
-route that does not exist until commit 38; Stripe retries, and that is fine.
+(`plus_monthly`, `pro_monthly`, `concierge_pass`), and
+`npm run stripe:catalog -- --sync` will do the same to a fresh account. The
+Portal allows switching between Plus and Pro, prorates upgrades, schedules
+decreases for period end, cancels at period end, shows invoices, and ends a
+trial on plan change. The webhook endpoint answers in production.
+
+The sandbox also holds the test data the gates left behind: one Plus
+subscription, two Concierge Passes, a booking charge and its full refund.
 
 ## Things only Cory can do
 
-1. Business details in the Stripe dashboard, and later live account
-   verification.
-2. Copy `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` into `.env.local` and
-   into the Vercel project. The production webhook secret comes from the
-   endpoint above; local uses `stripe listen`.
-3. Install the Stripe CLI and log in, for local webhooks and `stripe trigger`.
+Done:
+
+1. ~~Stripe CLI installed and logged in.~~
+2. ~~`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` in Vercel, and
+   `NEXT_PUBLIC_APP_URL` set for both local and production.~~ Without the
+   last one, Checkout returned people to whatever was on localhost:3000.
+
+Still outstanding:
+
+3. A **Terms of service URL** in public business details. With one,
+   `consent_collection` adds a checkbox Stripe records on the session
+   itself, which is stronger evidence of the booking-charge agreement than
+   our own timestamp. Stripe refuses the parameter without it.
 4. Turn on the "trial ending" reminder email under Billing settings, and
    confirm Smart Retries and failed-payment emails are on.
 5. Set the statement descriptor to `LLAMA INC` with the dynamic suffix
-   `MIRA`, and set Checkout branding colours.
+   `MIRA`, and set Checkout branding colours. Branding matters more than it
+   looks: hosted Checkout takes one theme for everyone, so the dark palette
+   is the only way it matches the app.
 6. Stripe Tax: set the head office address and a product tax category, for
    threshold monitoring only. No registrations, no collection yet.
 7. Turn on Adaptive Pricing so international customers see their own
    currency at Checkout.
 8. Roll the test secret key that was pasted into a chat window on
    2026-09-19.
+9. The Clerk application is still named **Passage**, so the sign-in screen
+   reads "Sign in to Passage". It is dashboard configuration, which is why
+   the rename commits never caught it.
+10. Business details, and live account verification, before any of this
+    leaves the sandbox.
 
-## Decisions, settled 2026-09-19
+## Decisions, settled 2026-09-19 and 2026-09-20
 
 | # | Question | Answer |
 |---|----------|--------|
@@ -239,14 +302,39 @@ route that does not exist until commit 38; Stripe retries, and that is fine.
 | D28 | A booking whose charge fails | Charge first, book only once it clears. A card needing authentication produces a message with a link, and the booking happens when it clears. Slower than booking first, but there is never a booking nobody paid for, and never a silent failure. |
 | D25 | Is Free a $0 subscription? | No. Free is the absence of a subscription. Tried the other way on 2026-09-19 and backed out the same hour: a $0 subscription puts Stripe in the signup path for people who pay nothing, counts every free signup as a new subscriber and every abandonment as churn in the numbers the board reads, and breaks the one-call hosted Checkout upgrade because Checkout creates a subscription rather than changing one. The Free product and price are archived in the sandbox. |
 
-## Definition of done, Phase A
+## Definition of done
 
-A new account is Free and can plan but not book. Starting Plus goes through
-Stripe Checkout with a test card and comes back to a membership page that
-shows the plan and the renewal date. Starting Pro shows "Pro, trial, first
-charge on <date>", and Stripe's test clock moved past that date turns it into
-a paid Pro period. Booking in chat writes an action and
-the Activity page shows "1 of 10 actions this period". Buying a Concierge
-Pass on a trip marks it Covered and its actions are not counted. The
-Customer Portal changes the plan and cancels it, and the app reflects both
-without a deploy. `stripe trigger` for a failed payment shows the banner.
+**Phase A: met.** A new account is Free and can plan but not book. Plus goes
+through Stripe Checkout with a test card and comes back to a membership page
+showing the plan and the renewal date. Pro carries a ten-day trial, once per
+person, and says when the first charge lands. Booking in chat writes an
+action and Activity shows it against the period's allowance. A Concierge Pass
+marks its trip Covered and its actions are not counted. The Customer Portal
+changes the plan and cancels it, and the app reflects both without a deploy.
+Lifecycle states each explain themselves.
+
+Two things were proven differently from the plan. A trial converting was
+checked by asserting Stripe's own trial state and charge amounts rather than
+by moving a test clock. Failed-payment states were set on the mirror, because
+Stripe will not put a working test card into `past_due` on demand, and the
+mirror is what a real `invoice.payment_failed` writes.
+
+**Phase B: met, and reconciled rather than eyeballed.** Against one test
+account Stripe held four succeeded charges: a $1,368 booking, two $150
+passes, and $29 for Plus. Gross $1,697, refunded $1,368, net $329. The
+membership page's single history lists all four plus the refund as its own
+line and nets to the same $329.
+
+Along the way: a $1,368 booking against a $500 per-booking cap produced a
+question rather than a charge; approving it charged the card and linked the
+PaymentIntent to its row; Stripe's authentication-required test card turned
+the same booking into a message with a working Checkout link and no booking
+made; and refunding twice, refunding a cancellation, and refunding a booking
+Mira never paid for are each refused with their own reason.
+
+## What running it again needs
+
+`npm run stripe:catalog -- --sync` makes a fresh account match the catalog.
+The other checks are `stripe:webhook-check` (12), `stripe:entitlement-check`
+(30), `stripe:checkout-check` (14) and `stripe:trial-check` (10). All of them
+clean up after themselves.
