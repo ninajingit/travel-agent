@@ -1,4 +1,4 @@
-# Nomi
+# Mira
 
 By Llama Inc.
 

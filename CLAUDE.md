@@ -1,4 +1,4 @@
-# Nomi
+# Mira
 
 An AI travel agent that plans trips, books them, and monitors them. Web app
 plus a chat surface.
@@ -8,7 +8,7 @@ Read `PLAN-STAGE1.md` for the commit-by-commit build plan.
 
 ## Current stage
 
-**Stage 1: application only. Commits 1 through 30.**
+**Stage 1: application only. Commits 1 through 31.**
 
 Payments are a later stage, run in a separate session. They are explicitly out
 of scope right now.

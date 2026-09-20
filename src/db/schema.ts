@@ -83,7 +83,7 @@ export const tripSegments = pgTable("trip_segments", {
 
 export const channelKind = pgEnum("channel_kind", ["web", "whatsapp", "imessage"]);
 
-// How much rope the agent has. The caps are the most Nomi may spend on a
+// How much rope the agent has. The caps are the most Mira may spend on a
 // person's behalf without asking them first; they are the traveller's own
 // limits on the agent. One row per user, created with defaults on first read.
 export const agentSettings = pgTable("agent_settings", {

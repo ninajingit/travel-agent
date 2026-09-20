@@ -36,7 +36,7 @@ export default async function AppHome() {
       </h2>
       {upcoming.length === 0 ? (
         <p className="mt-3 text-muted">
-          Nothing on the calendar. Ask Nomi to plan something, or save a
+          Nothing on the calendar. Ask Mira to plan something, or save a
           place under Inspiration.
         </p>
       ) : (
@@ -71,7 +71,7 @@ export default async function AppHome() {
                   </div>
                 ) : (
                   <p className="mt-5 text-sm text-muted">
-                    Nomi has not collected ideas for {trip.destination.name}{" "}
+                    Mira has not collected ideas for {trip.destination.name}{" "}
                     yet. Ask it what is worth doing there.
                   </p>
                 )}

@@ -3,8 +3,8 @@ import { MarketingShell } from "@/components/marketing-shell";
 import { Card } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Pricing · Nomi",
-  description: "Planning and inspiration are free. Pay when Nomi books and watches for you.",
+  title: "Pricing · Mira",
+  description: "Planning and inspiration are free. Pay when Mira books and watches for you.",
 };
 
 // Static copy. Nothing on this page reads data, checks who you are, or does
@@ -16,10 +16,10 @@ const OFFERS = [
     cadence: "",
     summary: "Planning and inspiration.",
     details: [
-      "Ask Nomi to plan anything, as often as you like.",
+      "Ask Mira to plan anything, as often as you like.",
       "Ideas for where you are going: events, places, things to do.",
       "Save places under Inspiration and see fares move.",
-      "When you want something booked, Nomi hands you the links.",
+      "When you want something booked, Mira hands you the links.",
     ],
   },
   {
@@ -29,9 +29,9 @@ const OFFERS = [
     summary: "Booking and monitoring for the regular traveller.",
     details: [
       "Everything in Free.",
-      "Nomi books flights, hotels, and trains for you, within the caps you set.",
+      "Mira books flights, hotels, and trains for you, within the caps you set.",
       "Every trip is watched: delays, gate changes, fare drops on refundable tickets.",
-      "Up to ten agent actions a month, where an action is a booking, a rebooking, or a cancellation Nomi carries out. Most people use three or four.",
+      "Up to ten agent actions a month, where an action is a booking, a rebooking, or a cancellation Mira carries out. Most people use three or four.",
     ],
   },
   {
@@ -41,9 +41,9 @@ const OFFERS = [
     summary: "The proactive concierge, for people who fly every month.",
     details: [
       "Everything in Plus.",
-      "Auto-rebook: when a flight slips, Nomi moves you and tells you afterwards, inside your caps.",
+      "Auto-rebook: when a flight slips, Mira moves you and tells you afterwards, inside your caps.",
       "Up to fifty agent actions a month.",
-      "A person from the Nomi team on the thread when the agent cannot finish the job: group bookings, visa questions, fare rules.",
+      "A person from the Mira team on the thread when the agent cannot finish the job: group bookings, visa questions, fare rules.",
     ],
   },
   {
@@ -64,10 +64,10 @@ export default function PricingPage() {
     <MarketingShell>
       <section className="py-16 sm:py-20">
         <h1 className="max-w-2xl font-display text-5xl font-bold tracking-tight sm:text-6xl">
-          Planning is free. Pay when Nomi does the work.
+          Planning is free. Pay when Mira does the work.
         </h1>
         <p className="mt-5 max-w-xl text-lg text-muted">
-          Prices in US dollars. Whatever Nomi spends on your behalf, flights,
+          Prices in US dollars. Whatever Mira spends on your behalf, flights,
           rooms, tickets, is separate, is always shown before it happens, and
           never goes past the caps you set.
         </p>
@@ -100,13 +100,13 @@ export default function PricingPage() {
           <div>
             <dt className="font-semibold">What counts as an agent action?</dt>
             <dd className="mt-1 text-muted">
-              One thing Nomi does with money on your behalf: a booking, a
+              One thing Mira does with money on your behalf: a booking, a
               rebooking, or a cancellation. Asking questions, planning, and
               watching are not actions and are never counted.
             </dd>
           </div>
           <div>
-            <dt className="font-semibold">Can Nomi spend without asking?</dt>
+            <dt className="font-semibold">Can Mira spend without asking?</dt>
             <dd className="mt-1 text-muted">
               Only if you turn on auto-rebook, and only inside the per-booking
               and monthly caps you set. Everything else is a question first.
@@ -122,7 +122,7 @@ export default function PricingPage() {
           <div>
             <dt className="font-semibold">Is this available now?</dt>
             <dd className="mt-1 text-muted">
-              Nomi is in a closed pilot. Members pay per booking for now;
+              Mira is in a closed pilot. Members pay per booking for now;
               memberships open with the next release.
             </dd>
           </div>

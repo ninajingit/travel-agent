@@ -17,7 +17,7 @@ const JOBS = [
   },
   {
     title: "Concierge",
-    body: "While you travel, Nomi watches. A flight slips, a gate changes, a bag goes missing: it acts, or asks, at 2am if it has to.",
+    body: "While you travel, Mira watches. A flight slips, a gate changes, a bag goes missing: it acts, or asks, at 2am if it has to.",
   },
 ];
 
@@ -29,7 +29,7 @@ export default function Home() {
           The part of travel that is just phone calls and patience, handled.
         </h1>
         <p className="mt-6 max-w-xl text-lg text-muted">
-          Nomi is an AI travel agent you talk to. It plans the trip, knows
+          Mira is an AI travel agent you talk to. It plans the trip, knows
           what is worth doing, books it, and stays on call until you are home.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -55,7 +55,7 @@ export default function Home() {
           <ol className="mt-4 grid gap-4 text-muted sm:grid-cols-3">
             <li>
               <span className="font-semibold text-fg">1. You say where, or when, or how much.</span>{" "}
-              Nomi comes back with options you can actually take.
+              Mira comes back with options you can actually take.
             </li>
             <li>
               <span className="font-semibold text-fg">2. You say yes.</span> It books, within

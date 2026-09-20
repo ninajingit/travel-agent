@@ -7,7 +7,7 @@ export function Wordmark({ href, size = "md" }: { href: string; size?: "md" | "l
       <span
         className={`font-display font-bold tracking-tight ${size === "lg" ? "text-xl" : "text-lg"}`}
       >
-        Nomi
+        Mira
       </span>
       <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted">
         by Llama Inc.

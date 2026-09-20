@@ -20,8 +20,8 @@ const display = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Nomi",
-  applicationName: "Nomi",
+  title: "Mira",
+  applicationName: "Mira",
   authors: [{ name: "Llama Inc." }],
   description:
     "Plans your trips, knows what is worth doing, books it, and stays on call while you travel.",

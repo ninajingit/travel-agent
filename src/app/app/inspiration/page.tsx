@@ -11,7 +11,7 @@ export default async function InspirationPage() {
     <div>
       <PageHeader
         title="Inspiration"
-        intro="Places you are curious about. Save one and Nomi starts planning around it: dates, fares, and what is worth doing there."
+        intro="Places you are curious about. Save one and Mira starts planning around it: dates, fares, and what is worth doing there."
       />
       <DestinationList initial={rows} />
     </div>

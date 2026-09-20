@@ -1,9 +1,9 @@
 # PLAN-STAGE1.md
 
-Stage 1: build the Nomi application. No payments, no billing, no
-subscriptions. Commits 1 through 30.
+Stage 1: build the Mira application. No payments, no billing, no
+subscriptions. Commits 1 through 31.
 
-A later stage, run in a separate session, adds Stripe starting at commit 31.
+A later stage, run in a separate session, adds Stripe starting at commit 32.
 That plan is deliberately not in this repo yet. Do not go looking for it and
 do not prepare for it.
 
@@ -72,6 +72,7 @@ variable.
 | 28 | reserve the scrollbar gutter so long pages do not shift content | same left edge on short and long pages |
 | 29 | rename Passage to Nomi, by Llama Inc. | no old name left in tracked files or rendered pages |
 | 30 | Concierge Pass priced at $150 per trip | pricing page copy |
+| 31 | rename Nomi to Mira | no old name left in tracked files or rendered pages |
 
 Revised after commit 10 (2026-09-19): chat is the core product, so it gets
 persistence and history, the home page becomes chat-first, and the visual
@@ -135,5 +136,5 @@ A reviewer can sign in, save a place under Inspiration, see two trips, change
 agent settings from the account menu, read past chats, have a scripted
 conversation that books something, watch a delay trigger a rebook, and see
 all of it in a monthly activity list with a running count. Deployed on
-Vercel. Thirty commits. Zero mentions of money anywhere
+Vercel. Thirty-one commits. Zero mentions of money anywhere
 in the codebase except static copy on the pricing page.

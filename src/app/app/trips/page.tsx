@@ -12,13 +12,13 @@ export default async function TripsPage() {
     <div>
       <PageHeader
         title="My Trips"
-        intro="Everything planned or booked, and what Nomi is watching right now."
+        intro="Everything planned or booked, and what Mira is watching right now."
       />
 
       {rows.length === 0 ? (
         <div className="mt-8">
           <EmptyState>
-            No trips yet. Save a place under Inspiration and Nomi will start
+            No trips yet. Save a place under Inspiration and Mira will start
             planning around it.
           </EmptyState>
         </div>

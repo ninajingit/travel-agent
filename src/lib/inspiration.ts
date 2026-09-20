@@ -23,7 +23,7 @@ const BY_DESTINATION: Record<string, Inspiration> = {
       { title: "Marvila", detail: "Former warehouses, now the breweries and galleries. Twenty minutes east by bus 728." },
     ],
     thingsToDo: [
-      { title: "Sintra day trip", detail: "Early train from Rossio, Pena Palace at opening, back by 18:00. Nomi can book the palace tickets." },
+      { title: "Sintra day trip", detail: "Early train from Rossio, Pena Palace at opening, back by 18:00. Mira can book the palace tickets." },
       { title: "Tram 28, from the wrong end", detail: "Board at Martim Moniz at 8am, sit on the right, ride to Campo de Ourique." },
       { title: "Swim at Costa da Caparica", detail: "Bus from Areeiro, 35 minutes. Still warm in October on a clear day." },
     ],

@@ -21,7 +21,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
       </header>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6">{children}</main>
       <footer className="mx-auto w-full max-w-5xl px-6 py-10 text-sm text-muted">
-        Nomi, by Llama Inc. The part of travel that is just phone calls and patience, handled.
+        Mira, by Llama Inc. The part of travel that is just phone calls and patience, handled.
       </footer>
     </div>
   );
