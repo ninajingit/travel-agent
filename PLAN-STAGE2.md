@@ -313,11 +313,14 @@ marks its trip Covered and its actions are not counted. The Customer Portal
 changes the plan and cancels it, and the app reflects both without a deploy.
 Lifecycle states each explain themselves.
 
-Two things were proven differently from the plan. A trial converting was
-checked by asserting Stripe's own trial state and charge amounts rather than
-by moving a test clock. Failed-payment states were set on the mirror, because
-Stripe will not put a working test card into `past_due` on demand, and the
-mirror is what a real `invoice.payment_failed` writes.
+Two things were proven differently from the plan at the time, and one was
+closed later. The trial was first checked by asserting Stripe's own trial
+state and charge amounts. On 2026-09-20 a Stripe test clock was moved eleven
+days past a Pro trial start: the subscription went `trialing` to `active`,
+the first invoice was paid at $99.00, the mirror followed, and
+`trial_used_at` was set. Failed-payment states were set on the mirror,
+because Stripe will not put a working test card into `past_due` on demand,
+and the mirror is what a real `invoice.payment_failed` writes.
 
 **Phase B: met, and reconciled rather than eyeballed.** Against one test
 account Stripe held four succeeded charges: a $1,368 booking, two $150
