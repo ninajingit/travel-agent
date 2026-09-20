@@ -5,6 +5,7 @@ import { parseId } from "@/lib/api";
 import { getConversation } from "@/db/queries/conversations";
 import { getTrip } from "@/db/queries/trips";
 import { ChatPanel } from "@/components/chat-panel";
+import { DeleteChatAndLeave } from "@/components/delete-chat-and-leave";
 
 export default async function ChatPage({ params }: PageProps<"/app/chats/[id]">) {
   const user = await ensureUser();
@@ -21,9 +22,12 @@ export default async function ChatPage({ params }: PageProps<"/app/chats/[id]">)
       <Link href="/app/chats" className="text-sm text-muted hover:text-fg">
         ← Chats
       </Link>
-      <h1 className="mt-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">
-        {conversation.title}
-      </h1>
+      <div className="mt-4 flex items-start justify-between gap-4">
+        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+          {conversation.title}
+        </h1>
+        <DeleteChatAndLeave conversationId={conversation.id} title={conversation.title} />
+      </div>
       {trip && (
         <p className="mt-1 text-sm text-muted">
           About your{" "}

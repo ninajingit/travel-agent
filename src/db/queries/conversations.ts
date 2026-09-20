@@ -70,3 +70,16 @@ export async function appendMessage(
     .returning();
   return row;
 }
+
+// Removes a thread and its messages. False when the id is unknown or belongs
+// to someone else. Messages go first; neon-http has no transactions.
+export async function deleteConversation(userId: number, id: number) {
+  const owned = await db.query.conversations.findFirst({
+    where: and(eq(conversations.id, id), eq(conversations.userId, userId)),
+    columns: { id: true },
+  });
+  if (!owned) return false;
+  await db.delete(messages).where(eq(messages.conversationId, id));
+  await db.delete(conversations).where(eq(conversations.id, id));
+  return true;
+}
