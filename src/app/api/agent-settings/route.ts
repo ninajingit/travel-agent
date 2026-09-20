@@ -6,6 +6,7 @@ import {
   saveAgentSettings,
   type AgentSettingsInput,
 } from "@/db/queries/agent-settings";
+import { getEntitlement } from "@/lib/billing/entitlement";
 
 const CHANNELS = ["web", "whatsapp", "imessage"] as const;
 type Channel = (typeof CHANNELS)[number];
@@ -43,6 +44,24 @@ export async function PUT(request: Request) {
   const channels = channelsField(body.allowedChannels);
   if (channels === null) {
     return badRequest(`allowedChannels must be a list drawn from ${CHANNELS.join(", ")}.`);
+  }
+
+  // The form disables this toggle without Pro; this is the same rule on the
+  // server, for anything that does not come through the form. Flat rather
+  // than clever: an earlier version exempted a value that was already true,
+  // which meant anyone whose settings started that way could keep asserting
+  // it, and the guard never fired.
+  if (body.autoRebook) {
+    const entitlement = await getEntitlement(user.id);
+    if (entitlement.plan !== "pro") {
+      return NextResponse.json(
+        {
+          error:
+            "Rebooking without asking is a Pro feature. A Concierge Pass turns it on for one trip.",
+        },
+        { status: 403 },
+      );
+    }
   }
 
   const input: AgentSettingsInput = {

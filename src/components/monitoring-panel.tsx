@@ -15,6 +15,7 @@ type Props = {
   delayMinutes: number;
   reason: string;
   autoRebook: boolean;
+  autoRebookAllowed: boolean;
   replacement: {
     carrier: string;
     departLabel: string;
@@ -23,6 +24,18 @@ type Props = {
     summary: string;
   } | null;
 };
+
+// Three states, not two: on and allowed, off, and on but not included. The
+// third is the one worth saying out loud, because the switch looks set.
+function autoRebookNote(wanted: boolean, allowed: boolean) {
+  if (wanted && allowed) {
+    return "Auto-rebook is on. Mira would do this without asking once the delay is confirmed.";
+  }
+  if (wanted) {
+    return "Auto-rebook is on in your settings, but your plan does not include it, so Mira is waiting for you.";
+  }
+  return "Auto-rebook is off, so Mira waits for you.";
+}
 
 export function MonitoringPanel(props: Props) {
   const router = useRouter();
@@ -81,9 +94,7 @@ export function MonitoringPanel(props: Props) {
               {busy ? "Rebooking" : `Accept, ${props.replacement.amountLabel}`}
             </Button>
             <span className="text-sm text-muted">
-              {props.autoRebook
-                ? "Auto-rebook is on. Mira would do this without asking once the delay is confirmed."
-                : "Auto-rebook is off, so Mira waits for you."}
+              {autoRebookNote(props.autoRebook, props.autoRebookAllowed)}
             </span>
           </div>
           {error && <ErrorText className="mt-3">{error}</ErrorText>}

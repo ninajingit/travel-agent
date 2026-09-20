@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 import { Button, Card, ErrorText, Pill } from "@/components/ui";
 
@@ -24,7 +26,17 @@ const UPCOMING_CHANNELS: Array<{ value: Channel; label: string; note: string }> 
 const toDollars = (cents: number) => (cents / 100).toFixed(2);
 const toCents = (dollars: string) => Math.round(Number(dollars) * 100);
 
-export function AgentSettingsForm({ initial }: { initial: Settings }) {
+export function AgentSettingsForm({
+  initial,
+  autoRebookAllowed,
+  plan,
+  passCount,
+}: {
+  initial: Settings;
+  autoRebookAllowed: boolean;
+  plan: "free" | "plus" | "pro";
+  passCount: number;
+}) {
   const [autoRebook, setAutoRebook] = useState(initial.autoRebook);
   const [perBooking, setPerBooking] = useState(toDollars(initial.perBookingCapCents));
   const [perTrip, setPerTrip] = useState(toDollars(initial.perTripCapCents));
@@ -42,7 +54,10 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          autoRebook,
+          // What the box shows, not what is remembered: without Pro it shows
+          // unchecked, so saving caps does not assert a setting the server
+          // would refuse.
+          autoRebook: autoRebook && autoRebookAllowed,
           perBookingCapCents: toCents(perBooking),
           perTripCapCents: toCents(perTrip),
           monthlyCapCents: toCents(monthly),
@@ -66,10 +81,11 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
   return (
     <form onSubmit={submit} className="mt-6 space-y-8">
       <Card className="p-5">
-        <label className="flex items-start gap-3">
+        <label className={`flex items-start gap-3 ${autoRebookAllowed ? "" : "opacity-60"}`}>
           <input
             type="checkbox"
-            checked={autoRebook}
+            checked={autoRebook && autoRebookAllowed}
+            disabled={!autoRebookAllowed}
             onChange={(e) => {
               setAutoRebook(e.target.checked);
               setStatus("idle");
@@ -85,6 +101,20 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
             </span>
           </span>
         </label>
+        {!autoRebookAllowed && (
+          <p className="mt-3 border-t border-border pt-3 text-sm text-muted">
+            {plan === "free"
+              ? "Rebooking without asking is a Pro feature. On the free plan Mira tells you what it would do and waits."
+              : "Rebooking without asking is a Pro feature. On Plus, Mira spots the delay and suggests the replacement; you press the button."}
+            {passCount > 0
+              ? " Your Concierge Passes already cover this on the trips they apply to, whatever this says."
+              : " A Concierge Pass also turns it on, for the one trip it covers."}{" "}
+            <Link href="/pricing" className="underline hover:text-fg">
+              See the plans
+            </Link>
+            .
+          </p>
+        )}
       </Card>
 
       <Card className="p-5">

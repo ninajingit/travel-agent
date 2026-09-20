@@ -17,6 +17,7 @@ import { Card, EmptyState, PageHeader, Pill } from "@/components/ui";
 import { MonitoringPanel } from "@/components/monitoring-panel";
 import { reportFor } from "@/lib/agent/monitoring";
 import { getAgentSettings } from "@/db/queries/agent-settings";
+import { canAutoRebook, getEntitlement } from "@/lib/billing/entitlement";
 
 export default async function TripPage({ params }: PageProps<"/app/trips/[id]">) {
   const user = await ensureUser();
@@ -30,6 +31,12 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
   const report = delayed ? reportFor(delayed) : null;
   const watching = trip.status === "booked" || trip.status === "in_progress";
   const settings = delayed ? await getAgentSettings(user.id) : null;
+  // Wanting auto-rebook and being allowed it are two different things. The
+  // panel says which, rather than promising something the plan will refuse.
+  const entitlement = delayed ? await getEntitlement(user.id) : null;
+  const autoRebookAllowed = entitlement
+    ? canAutoRebook(entitlement, trip.id)
+    : false;
 
   return (
     <div>
@@ -65,6 +72,7 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
             delayMinutes={report.delayMinutes}
             reason={report.reason}
             autoRebook={settings.autoRebook}
+            autoRebookAllowed={autoRebookAllowed}
             replacement={
               report.replacement
                 ? {
