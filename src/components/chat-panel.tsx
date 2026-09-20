@@ -186,7 +186,7 @@ export function ChatPanel({
             }
           }}
           rows={1}
-          placeholder={messages.length === 0 ? placeholder || "Message Passage" : "Message Passage"}
+          placeholder={placeholder}
           aria-label="Message Passage"
           className="max-h-40 min-h-[2.75rem] flex-1 resize-none bg-transparent px-2 py-2.5 text-base text-fg outline-none placeholder:text-muted/60"
         />

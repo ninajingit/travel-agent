@@ -1,9 +1,9 @@
 # PLAN-STAGE1.md
 
 Stage 1: build the Passage application. No payments, no billing, no
-subscriptions. Commits 1 through 22.
+subscriptions. Commits 1 through 27.
 
-A later stage, run in a separate session, adds Stripe starting at commit 23.
+A later stage, run in a separate session, adds Stripe starting at commit 28.
 That plan is deliberately not in this repo yet. Do not go looking for it and
 do not prepare for it.
 
@@ -64,6 +64,11 @@ variable.
 | 20 | landing and pricing pages, static marketing copy only | no auth coupling, nothing functional |
 | 21 | chat composer: example requests typed and erased in place of starter buttons | animation runs on an empty thread, stops once typing starts |
 | 22 | account menu follows the page theme; Pricing link in the menu | readable in light and dark, link opens the static page |
+| 23 | demo data seeded for every account on first sign-in | a new account sees the trips, chats, activity |
+| 24 | per-trip spending cap | three caps persist |
+| 25 | floating chat launcher on every app page | recent chats listed, New chat works |
+| 26 | polish: Connect buttons for upcoming channels, robot icon, empty composer placeholder | in browser |
+| 27 | delete past chats | thread and its messages removed, list updates |
 
 Revised after commit 10 (2026-09-19): chat is the core product, so it gets
 persistence and history, the home page becomes chat-first, and the visual
@@ -105,7 +110,8 @@ trip_segments       id, trip_id, kind, carrier, ref,
                     depart_at, arrive_at, status
 
 agent_settings      user_id, auto_rebook, per_booking_cap_cents,
-                    monthly_cap_cents, allowed_channels
+                    per_trip_cap_cents, monthly_cap_cents,
+                    allowed_channels
 
 conversations       id, user_id, trip_id, title, created_at
 
@@ -126,5 +132,5 @@ A reviewer can sign in, save a place under Inspiration, see two trips, change
 agent settings from the account menu, read past chats, have a scripted
 conversation that books something, watch a delay trigger a rebook, and see
 all of it in a monthly activity list with a running count. Deployed on
-Vercel. Twenty-two commits. Zero mentions of money anywhere
+Vercel. Twenty-seven commits. Zero mentions of money anywhere
 in the codebase except static copy on the pricing page.

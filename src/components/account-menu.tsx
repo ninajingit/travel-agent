@@ -13,7 +13,7 @@ export function AccountMenu() {
         <UserButton.Link
           label="Agent settings"
           href="/app/settings"
-          labelIcon={<SettingsIcon />}
+          labelIcon={<RobotIcon />}
         />
         <UserButton.Link label="Pricing" href="/pricing" labelIcon={<TagIcon />} />
       </UserButton.MenuItems>
@@ -38,7 +38,7 @@ function TagIcon() {
   );
 }
 
-function SettingsIcon() {
+function RobotIcon() {
   return (
     <svg
       viewBox="0 0 16 16"
@@ -47,10 +47,14 @@ function SettingsIcon() {
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
+      strokeLinejoin="round"
       aria-hidden
     >
-      <circle cx="8" cy="8" r="2.5" />
-      <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4" />
+      <rect x="2.5" y="5.5" width="11" height="8" rx="2" />
+      <path d="M8 5.5V3M6.5 2.5h3" />
+      <circle cx="6" cy="9.5" r="0.9" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="9.5" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M6.5 11.75h3" />
     </svg>
   );
 }

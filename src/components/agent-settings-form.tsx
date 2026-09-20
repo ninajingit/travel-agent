@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Card, ErrorText } from "@/components/ui";
+import { Button, Card, ErrorText, Pill } from "@/components/ui";
 
 type Channel = "web" | "whatsapp" | "imessage";
 
@@ -13,10 +13,11 @@ type Settings = {
   allowedChannels: Channel[];
 };
 
-const CHANNELS: Array<{ value: Channel; label: string; note: string }> = [
-  { value: "web", label: "Web", note: "The chat in this app." },
-  { value: "whatsapp", label: "WhatsApp", note: "Not available yet." },
-  { value: "imessage", label: "iMessage", note: "Not available yet." },
+// Channels Passage does not deliver on yet. Connect explains itself instead
+// of doing anything.
+const UPCOMING_CHANNELS: Array<{ value: Channel; label: string; note: string }> = [
+  { value: "whatsapp", label: "WhatsApp", note: "Messages and alerts on WhatsApp." },
+  { value: "imessage", label: "iMessage", note: "Messages and alerts on iMessage." },
 ];
 
 // Money is stored in cents and edited in dollars.
@@ -28,18 +29,9 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
   const [perBooking, setPerBooking] = useState(toDollars(initial.perBookingCapCents));
   const [perTrip, setPerTrip] = useState(toDollars(initial.perTripCapCents));
   const [monthly, setMonthly] = useState(toDollars(initial.monthlyCapCents));
-  const [channels, setChannels] = useState<Channel[]>(initial.allowedChannels);
+  const channels = initial.allowedChannels;
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
-
-  function toggleChannel(channel: Channel) {
-    setChannels((current) =>
-      current.includes(channel)
-        ? current.filter((c) => c !== channel)
-        : [...current, channel],
-    );
-    setStatus("idle");
-  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -131,23 +123,17 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
 
       <Card className="p-5">
         <h2 className="font-display text-lg font-bold">Channels</h2>
-        <p className="mt-0.5 text-sm text-muted">
-          Where Passage may reach you.
-        </p>
-        <ul className="mt-3 space-y-2">
-          {CHANNELS.map((c) => (
-            <li key={c.value}>
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={channels.includes(c.value)}
-                  onChange={() => toggleChannel(c.value)}
-                  className="h-4 w-4 accent-accent"
-                />
-                <span>{c.label}</span>
-                <span className="text-sm text-muted">{c.note}</span>
-              </label>
-            </li>
+        <p className="mt-0.5 text-sm text-muted">Where Passage may reach you.</p>
+        <ul className="mt-3 divide-y divide-border">
+          <li className="flex items-center justify-between gap-3 py-3">
+            <div>
+              <div className="font-medium">Web</div>
+              <div className="text-sm text-muted">The chat in this app.</div>
+            </div>
+            <Pill tone="accent">Connected</Pill>
+          </li>
+          {UPCOMING_CHANNELS.map((c) => (
+            <ChannelRow key={c.value} label={c.label} note={c.note} />
           ))}
         </ul>
       </Card>
@@ -189,5 +175,22 @@ function MoneyField({
         <span className="pr-3.5 text-muted">USD</span>
       </span>
     </label>
+  );
+}
+
+function ChannelRow({ label, note }: { label: string; note: string }) {
+  const [asked, setAsked] = useState(false);
+  return (
+    <li className="flex items-center justify-between gap-3 py-3">
+      <div>
+        <div className="font-medium">{label}</div>
+        <div className="text-sm text-muted">
+          {asked ? `Not available yet. Passage will tell you when ${label} is ready.` : note}
+        </div>
+      </div>
+      <Button type="button" variant="secondary" onClick={() => setAsked(true)} disabled={asked}>
+        {asked ? "Requested" : "Connect"}
+      </Button>
+    </li>
   );
 }
