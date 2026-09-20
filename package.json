@@ -17,6 +17,7 @@
     "stripe:entitlement-check": "tsx --env-file=.env.local scripts/stripe-entitlement-check.ts",
     "stripe:trial-check": "tsx --env-file=.env.local scripts/stripe-trial-check.ts",
     "stripe:fx-check": "tsx --env-file=.env.local scripts/stripe-fx-check.ts",
+    "locale:check": "tsx --env-file=.env.local scripts/locale-check.ts",
     "demo:tier-check": "tsx --env-file=.env.local scripts/demo-tier-check.ts"
   },
   "dependencies": {
