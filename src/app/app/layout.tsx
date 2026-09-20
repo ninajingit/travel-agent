@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ensureUser } from "@/lib/auth";
 import { AccountMenu } from "@/components/account-menu";
 import { AppNav } from "@/components/app-nav";
+import { ChatLauncher } from "@/components/chat-launcher";
 
 // Shell for every signed-in page. The proxy has already required a session,
 // so ensureUser() here guarantees the users row exists before any page runs.
@@ -21,9 +22,10 @@ export default async function AppLayout({ children }: LayoutProps<"/app">) {
           <AccountMenu />
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 sm:px-6 sm:py-10">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 pb-24 sm:px-6 sm:py-10 sm:pb-24">
         {children}
       </main>
+      <ChatLauncher />
     </div>
   );
 }
