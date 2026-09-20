@@ -6,6 +6,7 @@ import { AutoStart, StartButton } from "@/components/pricing-actions";
 import { Card, ButtonLink, Pill } from "@/components/ui";
 import { ensureUser } from "@/lib/auth";
 import { getEntitlement } from "@/lib/billing/entitlement";
+import { TRIAL_DAYS } from "@/lib/billing/checkout";
 
 export const metadata: Metadata = {
   title: "Pricing · Mira",
@@ -72,7 +73,11 @@ function isOffer(value: unknown): value is "plus" | "pro" {
 export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
   const { userId } = await auth();
   const signedIn = Boolean(userId);
-  const entitlement = signedIn ? await getEntitlement((await ensureUser()).id) : null;
+  const user = signedIn ? await ensureUser() : null;
+  const entitlement = user ? await getEntitlement(user.id) : null;
+  // Signed out, the offer is real for anyone who has not taken it, so it is
+  // advertised. Signed in, it is only advertised to someone who can have it.
+  const trialOffered = user ? user.trialUsedAt === null : true;
   const currentPlan = entitlement?.plan ?? null;
   const subscribed = currentPlan === "plus" || currentPlan === "pro";
 
@@ -101,6 +106,11 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
               <span className="font-display text-4xl font-bold">{offer.price}</span>
               {offer.cadence && <span className="text-sm text-muted">{offer.cadence}</span>}
             </div>
+            {offer.name === "Pro" && trialOffered && !subscribed && (
+              <p className="mt-2 text-sm font-semibold text-accent">
+                First {TRIAL_DAYS} days free
+              </p>
+            )}
             <p className="mt-3 font-medium">{offer.summary}</p>
             <ul className="mt-4 space-y-2 text-sm text-muted">
               {offer.details.map((line) => (
@@ -116,6 +126,7 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
                 signedIn={signedIn}
                 currentPlan={currentPlan}
                 subscribed={subscribed}
+                trialOffered={trialOffered}
               />
             </div>
           </Card>
@@ -169,11 +180,13 @@ function OfferAction({
   signedIn,
   currentPlan,
   subscribed,
+  trialOffered,
 }: {
   offer: Offer;
   signedIn: boolean;
   currentPlan: string | null;
   subscribed: boolean;
+  trialOffered: boolean;
 }) {
   const key = offer.name.toLowerCase();
 
@@ -218,12 +231,25 @@ function OfferAction({
     );
   }
 
+  const label =
+    key === "pro" && trialOffered
+      ? `Start ${TRIAL_DAYS} days free`
+      : `Start ${offer.name}`;
+
   return (
-    <StartButton
-      offer={key as "plus" | "pro"}
-      label={`Start ${offer.name}`}
-      signedIn={signedIn}
-      variant={offer.name === "Pro" ? "primary" : "secondary"}
-    />
+    <div>
+      <StartButton
+        offer={key as "plus" | "pro"}
+        label={label}
+        signedIn={signedIn}
+        variant={offer.name === "Pro" ? "primary" : "secondary"}
+      />
+      {key === "pro" && trialOffered && (
+        <p className="mt-2 text-xs text-muted">
+          Card required. Nothing is charged until day {TRIAL_DAYS + 1}, and you
+          can cancel before then.
+        </p>
+      )}
+    </div>
   );
 }

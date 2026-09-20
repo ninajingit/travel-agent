@@ -47,6 +47,20 @@ export async function getOrCreateCustomer(user: User) {
   return customer.id;
 }
 
+/** Ten days of Pro before the first charge, once per person. */
+export const TRIAL_DAYS = 10;
+
+/**
+ * The trial is the reason to pick Pro, and it is offered once.
+ *
+ * Stripe will happily start a second trial on a second subscription, so
+ * eligibility is the app's own record, set by the webhook the first time a
+ * trialing subscription is seen and never cleared.
+ */
+export function trialAvailable(user: User, offer: "plus" | "pro") {
+  return offer === "pro" && user.trialUsedAt === null;
+}
+
 /** Hosted Checkout for a membership. */
 export async function membershipCheckout(user: User, offer: "plus" | "pro") {
   const customer = await getOrCreateCustomer(user);
@@ -63,7 +77,12 @@ export async function membershipCheckout(user: User, offer: "plus" | "pro") {
     metadata,
     // Also on the subscription, so the webhook can find the person even when
     // subscription.created arrives before the session is completed.
-    subscription_data: { metadata },
+    subscription_data: {
+      metadata,
+      // Stripe runs the clock. The card is still collected at Checkout, so
+      // the trial converts on its own unless it is cancelled first.
+      ...(trialAvailable(user, offer) ? { trial_period_days: TRIAL_DAYS } : {}),
+    },
   });
 }
 

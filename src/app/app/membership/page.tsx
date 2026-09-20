@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ensureUser } from "@/lib/auth";
 import { getEntitlement, type Entitlement } from "@/lib/billing/entitlement";
+import { CATALOG } from "@/lib/billing/catalog";
 import { listTrips } from "@/db/queries/trips";
 import { formatMoney } from "@/lib/format";
 import { Card, ButtonLink, EmptyState, PageHeader, Pill } from "@/components/ui";
@@ -32,7 +33,10 @@ function statusLine(entitlement: Entitlement) {
     return "You are on the free plan. Nothing to pay, nothing to cancel.";
   }
   if (entitlement.status === "trialing" && entitlement.trialEnd) {
-    return `Free until ${formatDay(entitlement.trialEnd)}. Your card is charged then, not before.`;
+    const amount = formatMoney(
+      CATALOG[entitlement.plan === "pro" ? "pro" : "plus"].unitAmount,
+    );
+    return `Free trial. Your card is charged ${amount} on ${formatDay(entitlement.trialEnd)}, not before. Cancel any time until then and it never is.`;
   }
   if (entitlement.cancelAtPeriodEnd) {
     return `Ends on ${renews}. Until then nothing changes.`;

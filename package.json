@@ -14,7 +14,8 @@
     "stripe:catalog": "tsx --env-file=.env.local scripts/stripe-catalog.ts",
     "stripe:webhook-check": "tsx --env-file=.env.local scripts/stripe-webhook-check.ts",
     "stripe:checkout-check": "tsx --env-file=.env.local scripts/stripe-checkout-check.ts",
-    "stripe:entitlement-check": "tsx --env-file=.env.local scripts/stripe-entitlement-check.ts"
+    "stripe:entitlement-check": "tsx --env-file=.env.local scripts/stripe-entitlement-check.ts",
+    "stripe:trial-check": "tsx --env-file=.env.local scripts/stripe-trial-check.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.4",
