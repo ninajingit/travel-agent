@@ -155,6 +155,24 @@ export default async function MembershipPage({
         </div>
       </Card>
 
+      {user.bookingConsentAt && (
+        <Card className="mt-4 p-5">
+          <p className="text-sm">
+            <span className="font-semibold">Mira may charge your card for what it books.</span>{" "}
+            You agreed to this on {formatDay(user.bookingConsentAt)}. It never
+            spends more than the caps in your{" "}
+            <Link href="/app/settings" className="underline hover:text-fg">
+              agent settings
+            </Link>{" "}
+            without asking you first, and every charge is listed in{" "}
+            <Link href="/app/activity" className="underline hover:text-fg">
+              Activity
+            </Link>
+            .
+          </p>
+        </Card>
+      )}
+
       <h2 className="mt-10 font-display text-xl font-bold">Agent actions</h2>
       <p className="mt-1 text-sm text-muted">
         An action is a booking, a rebooking, or a cancellation Mira carries out.

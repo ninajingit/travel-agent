@@ -23,6 +23,11 @@ export const users = pgTable("users", {
   // subscription, so the app remembers. Set when a trialing subscription is
   // first seen, and never cleared.
   trialUsedAt: timestamp("trial_used_at", { withTimezone: true }),
+  // When this person agreed that Mira may charge their card for the flights
+  // and hotels it books. A different agreement from paying for a membership,
+  // so it is recorded separately; the card networks treat the two as
+  // different purposes and Stripe expects a record of the agreement kept.
+  bookingConsentAt: timestamp("booking_consent_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

@@ -176,6 +176,16 @@ export async function syncCheckoutSession(session: Stripe.Checkout.Session) {
       .where(eq(users.id, user.id));
   }
 
+  // Completing a checkout means the consent text above the pay button was
+  // shown and accepted. Recorded once, with the date, because Mira cannot
+  // charge a card for a booking without an agreement to point at.
+  if (user.bookingConsentAt === null) {
+    await db
+      .update(users)
+      .set({ bookingConsentAt: new Date() })
+      .where(eq(users.id, user.id));
+  }
+
   if (session.mode === "subscription") {
     const subscriptionId = idOf(session.subscription);
     if (!subscriptionId) return;
