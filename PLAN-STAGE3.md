@@ -18,9 +18,9 @@ Four requirements came in. Two are Link features. Two are ours to build.
 
 | Asked for | What Link offers | So |
 |---|---|---|
-| The traveller sets a limit the agent may spend on its own, and limits above which it must get approval, per agent | Link approves **every** purchase. There is no autonomous tier. The traveller's Link account does carry its own per-transaction, daily, and 30-day limits, readable via `user-info`, and those apply on top of anything we do. | The autonomous tier is the card on file from Stage 2, gated by the caps the traveller already sets: the per-booking cap is the limit Mira may spend alone, and the per-trip and monthly caps are the limits above which it must ask. "Asking" becomes a Link approval. |
+| The traveller sets a limit the agent may spend on its own, and limits above which it must get approval, per agent | Today, Link approves **every** purchase; the developer docs say so twice. link.com lists "Granular agent controls: set controls for when your agent can spend with and without your approval" under **Coming soon**, alongside more payment methods and saved buying preferences. The traveller's Link account does already carry per-transaction, daily, and 30-day limits, readable via `user-info`, which apply on top of anything we do. | The autonomous tier is the card on file from Stage 2, gated by the caps the traveller already sets: the per-booking cap is the limit Mira may spend alone, and the per-trip and monthly caps are the limits above which it must ask. "Asking" becomes a Link approval. When Link ships its own controls, this is the rail they replace (D41). |
 | Mira picks the right card for the merchant: the United card for United, the Amex for rentals | `payment-methods list` returns the wallet's cards with ids. `spend-request create --payment-method-id` charges a specific one. | Fully supported. Mira keeps a preference map and passes the id. |
-| Link's approval shows the intent, and if what the agent is about to charge does not match what it told the traveller, stop and ask | `--context` (100+ characters), `--line-item`, `--total`, `--merchant-name` and `--merchant-url` are all shown on the approval screen. Link **displays** them; it does not check them against anything. The virtual card cannot be charged above the approved amount, and a higher charge comes back as `re_authorize`. | The check is ours. Mira records what it proposed before it spends, builds the spend request from that record, and refuses to proceed if the two disagree. After the fact, the spend request's actual charge is reconciled against the proposal. |
+| Link's approval shows the intent, and if what the agent is about to charge does not match what it told the traveller, stop and ask | Everything on the approval screen for a virtual-card request is **supplied by the agent**: `--context` (100+ characters), `--line-item`, `--total`, `--merchant-name` and `--merchant-url`. Link displays them and does not check them against anything. What Link does enforce is the **amount**: the one-time card cannot be charged above what was approved, and a higher charge comes back as `re_authorize`. Whether the card is bound to the named merchant is not documented; the docs say it "works at any seller that accepts cards online". | The check is ours, and it has to be, because the screen is only as honest as Mira. Mira records what it proposed before it spends, builds the spend request from that record, and refuses to proceed if the two disagree. After the fact, the spend request's actual charge is reconciled against the proposal. Merchant binding is a question for Stripe (Cory's list). |
 | Mira calls Link and Link informs the traveller | Spend request → `approval_url` → push notification in the Link app → approve → one-time-use virtual card, valid 12 hours. Test mode returns card `4000009990001984` and charges nothing. | This is the core flow. |
 
 Three constraints that shape everything below.
@@ -131,6 +131,18 @@ Commit prefix stays `pay(NN)`. One concern per commit; stop for review.
   respected, but never edited from Mira. They belong to the traveller and
   Link.
 
+## What the traveller actually sees
+
+Link's own example on link.com is a travel booking, which is convenient. The
+approval screen shows: which agent is asking ("openclaw-jane wants to spend
+$180"), the merchant name and domain ("Triplo", "triplo.com"), the line item
+("Queen room", "New Orleans"), the amount, which card will be used ("Visa
+Credit ····1234"), and Approve / Decline. Purchase history afterwards shows
+the merchant, time, amount, status, card, and agent.
+
+Every one of those fields except the agent name and the card is text Mira
+sends. That is the whole reason the proposal row exists.
+
 ## Notes on intent
 
 - The proposal is the contract. It is written before the chat message, and
@@ -141,6 +153,25 @@ Commit prefix stays `pay(NN)`. One concern per commit; stop for review.
   proposal and execution, Mira re-proposes; it does not quietly raise the
   amount, even though Link would let it with a second approval.
 - Flagged proposals are never auto-resolved. They wait for the traveller.
+- Link enforces the amount at the card. It does not, as far as the docs say,
+  enforce the merchant. So the post-approval reconciliation compares the
+  supplier's actual charge to the proposal's merchant as well as its amount,
+  and a card used somewhere other than where the traveller was told is
+  flagged even though Link would have allowed it.
+
+## Not chosen: Stripe Issuing for agents
+
+Stripe's other answer to "verify what the agent is buying" is Issuing for
+agents: Llama would fund virtual cards, hand one to Mira per task, and get an
+`issuing_authorization.request` webhook on every purchase attempt, with a two
+second window to approve or decline against merchant category, amount, and
+the task's metadata. That is intent verification enforced by Stripe at
+authorization time rather than by Mira before it, and merchant category
+controls would keep a travel card from ever paying a restaurant. It is not
+chosen for Stage 3 because it solves supplier payment, not collection: Llama
+still has to charge the traveller, which is the merchant-of-record problem
+again. It is the right shape for the autonomous tier if that problem is
+solved another way later, and it is noted here so nobody rediscovers it.
 
 ## Things only Cory can do
 
@@ -151,6 +182,11 @@ Commit prefix stays `pay(NN)`. One concern per commit; stop for review.
    card preferences can be tested. Device-flow login is a browser step.
 3. **Ask Duffel** whether a one-time-use virtual card is accepted as card
    details, and whether it needs the billing address Link returns.
+3a. **Ask Stripe two things** in the same email: whether a Link virtual card
+   is bound to the merchant named on the spend request or only to the
+   amount, and the timeline for the "granular agent controls" that link.com
+   lists as coming soon, since that is the feature that would replace our
+   card-on-file autonomous rail.
 4. **A key for encrypting Link tokens at rest**, generated and placed in
    `.env.local` and Vercel as `LINK_TOKEN_KEY`.
 5. Node 22 locally if you want the CLI for exploration. The app itself stays
@@ -171,6 +207,7 @@ Commit prefix stays `pay(NN)`. One concern per commit; stop for review.
 | D38 | Chat approval hand-off | **A link in the chat plus the Link push notification.** / Also poll and post a follow-up message in chat when the status changes, which needs a background job the app does not have. |
 | D39 (settled) | Auto-rebook above the caps | **Ask, in chat, and wait**, even at 2am. They wake to a question, not a charge. |
 | D40 | The `report` command | **Call it after every attempt**, success or not, since it costs nothing and Stripe uses it to improve agent checkout. / Skip. |
+| D41 | When Link ships granular agent controls | **Retire the card-on-file autonomous rail for connected US travellers** and let Link hold the "spend without approval" threshold, since that puts the control in the wallet the traveller already trusts. `decidePayment()` is built as the one seam this changes. / Keep both, with Mira's caps as a second ceiling. |
 
 ## Definition of done
 
