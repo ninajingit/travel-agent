@@ -1,7 +1,8 @@
 # PLAN-STAGE3.md
 
 Stage 3: Mira pays with the traveller's Link wallet. Commits 59 onward.
-**Draft.** The decisions at the bottom are open; nothing here is built.
+**Draft.** Four decisions were settled on 2026-09-20 and are marked below;
+the rest carry defaults. Nothing here is built.
 
 Stage 2 left Mira charging a card on file through Llama Inc.'s Stripe
 account for everything it books. That works, and it makes Llama the merchant
@@ -17,7 +18,7 @@ Four requirements came in. Two are Link features. Two are ours to build.
 
 | Asked for | What Link offers | So |
 |---|---|---|
-| The traveller sets a limit the agent may spend on its own, and limits above which it must get approval, per agent | Link approves **every** purchase. There is no autonomous tier. The traveller's Link account does carry its own per-transaction, daily, and 30-day limits, readable via `user-info`, and those apply on top of anything we do. | The autonomous tier is the card on file from Stage 2, gated by a new cap the traveller sets. Everything above it goes to Link, where the traveller approves in the app. |
+| The traveller sets a limit the agent may spend on its own, and limits above which it must get approval, per agent | Link approves **every** purchase. There is no autonomous tier. The traveller's Link account does carry its own per-transaction, daily, and 30-day limits, readable via `user-info`, and those apply on top of anything we do. | The autonomous tier is the card on file from Stage 2, gated by the caps the traveller already sets: the per-booking cap is the limit Mira may spend alone, and the per-trip and monthly caps are the limits above which it must ask. "Asking" becomes a Link approval. |
 | Mira picks the right card for the merchant: the United card for United, the Amex for rentals | `payment-methods list` returns the wallet's cards with ids. `spend-request create --payment-method-id` charges a specific one. | Fully supported. Mira keeps a preference map and passes the id. |
 | Link's approval shows the intent, and if what the agent is about to charge does not match what it told the traveller, stop and ask | `--context` (100+ characters), `--line-item`, `--total`, `--merchant-name` and `--merchant-url` are all shown on the approval screen. Link **displays** them; it does not check them against anything. The virtual card cannot be charged above the approved amount, and a higher charge comes back as `re_authorize`. | The check is ours. Mira records what it proposed before it spends, builds the spend request from that record, and refuses to proceed if the two disagree. After the fact, the spend request's actual charge is reconciled against the proposal. |
 | Mira calls Link and Link informs the traveller | Spend request → `approval_url` → push notification in the Link app → approve → one-time-use virtual card, valid 12 hours. Test mode returns card `4000009990001984` and charges nothing. | This is the core flow. |
@@ -38,8 +39,8 @@ Three constraints that shape everything below.
 
 - **Two rails, one policy.** `decidePayment(proposal)` answers one question:
   card on file, or Link. Card on file when the amount is at or under the
-  traveller's autonomous cap and inside the trip and month caps. Link for
-  everything else, and always for a traveller who has set the autonomous cap
+  per-booking cap and inside the per-trip and monthly caps. Link for
+  everything else, and always for a traveller who has set the per-booking cap
   to zero. Travellers who have not connected Link, or cannot, get Stage 2's
   behaviour: card on file inside the caps, a question in chat above them.
 - **A proposal before any spend.** Mira writes down what it is about to buy,
@@ -74,8 +75,7 @@ link_connections    id, user_id (unique), link_customer_id, email,
                     access_token_enc, refresh_token_enc, access_expires_at,
                     scope, connected_at, disconnected_at
 
-agent_settings      + autonomous_cap_cents (default 0)
-                    + card_preferences jsonb
+agent_settings      + card_preferences jsonb
                         [{ match: { category: "airline" } | { merchant: "United" },
                            link_payment_method_id, label }]
 
@@ -104,25 +104,29 @@ Commit prefix stays `pay(NN)`. One concern per commit; stop for review.
 | 59 | This plan; CLAUDE.md gains the Stage 3 rules once the decisions are settled | docs only |
 | 60 | `@stripe/link-sdk` installed; a script authenticates with the device flow, creates a **test-mode** spend request for $35, polls to approval, retrieves the test card into memory, prints only the last four | test card `…1984` last four printed; nothing else about the card on stdout or in any file |
 | 61 | `link_connections` table; `/app/settings` gets Connect Link and Disconnect; OAuth authorization-code flow with PKCE; tokens encrypted at rest; refresh before expiry; `user-info` shown (name, Link's own limits) | connect in browser, settings shows the name and limits; disconnect revokes |
-| 62 | Spending policy: `autonomous_cap_cents` on settings with copy; `decidePayment()` routes by amount and connection; Stage 2 `chargeForBooking` stays for the card-on-file rail | routing checks: under cap → card, over → Link, not connected → card + chat question, cap zero → always Link |
+| 62 | Spending policy: `decidePayment()` routes by amount and connection using the existing three caps; the settings page says next to the per-booking cap that it is what Mira may spend without asking, and at Link connect time says the same again with the current number; Stage 2 `chargeForBooking` stays for the card-on-file rail | routing checks: under all caps → card, over any → Link, not connected → card + chat question, per-booking cap zero → always Link |
 | 63 | Proposals: Mira writes a `spend_proposals` row before any spend; the chat message that describes the booking is generated **from** the row, not the other way round | booking in chat writes a proposal, and the message text matches the row field for field |
 | 64 | Link spend request from a proposal: `context` from the proposal, line items, merchant, preferred card, `metadata.proposal_id`; approval link in chat; `POST /api/spend/[id]/poll` advances status; approved → card into memory → supplier call → transaction row with `link_spend_request_id` and `card_last4`; `report` outcome to Link | test-mode request approved in the Link app from the chat link; transaction row appears; no card number anywhere but memory |
 | 65 | Outcomes: denied, expired, `requires_action` (each `next_action.type`), `re_authorize`, cancelled; a sentence for each in Mira's voice; nothing recorded on any of them | each status produces its sentence and no row |
 | 66 | Intent check: before creating a request, the proposal and the request are compared field by field; after approval, the spend request's `amount` and `merchant` are compared to the proposal; any mismatch marks the proposal `flagged` with a reason, cancels the request, and asks in chat | a mutated amount is caught before the request is created; a mutated request is caught after |
 | 67 | Review: Activity shows flagged proposals and Link-approved rows ("Approved in Link, Visa …1984"); the membership history marks Link-paid rows as paid directly to the supplier, not through Mira | reconciled by eye against `spend-request list` |
 | 68 | Card preferences: settings lists Link payment methods; the traveller maps categories and named merchants to cards; `decidePayment` fills `link_payment_method_id` | a United booking carries the United card's id on the request |
-| 69 | Auto-rebook stays on the card on file: the monitoring path never goes to Link, and the settings page says so next to the toggle | delayed-segment rebook under the autonomous cap charges the card; over it, asks rather than sending a 2am approval |
+| 69 | Auto-rebook stays on the card on file: the monitoring path never goes to Link, and the settings page says so next to the toggle | delayed-segment rebook under the caps charges the card; over any of them, asks in chat rather than sending a 2am approval |
 
 ## Notes on the policy
 
-- The autonomous cap defaults to **zero**. A new traveller who connects Link
-  approves everything until they choose otherwise. This is the trust-forward
-  default and it is also what makes Pro's auto-rebook honest: the settings
-  page says plainly that auto-rebook only acts under this number.
-- Stage 2's per-booking, per-trip, and monthly caps keep their meaning as
-  "the most Mira may spend without asking". With Link, "asking" becomes a
-  Link approval for connected travellers and stays a chat question for
-  everyone else.
+- There is no new cap (D30). The per-booking cap the traveller already has
+  is the amount Mira may spend alone, and the per-trip and monthly caps are
+  the limits above which it asks. Existing settings carry over and
+  auto-rebook keeps working the day someone connects Link.
+- The cost of that choice is stated rather than hidden: the default
+  per-booking cap is $500, so a $500 booking can happen on the card on file
+  with no approval the moment Link is connected. The connect screen therefore
+  shows the current number and offers to change it before finishing, and the
+  settings page says next to the cap that it is what Mira spends without
+  asking.
+- With Link, "asking" becomes a Link approval for connected travellers and
+  stays a chat question for everyone else.
 - Link's own limits on the traveller's account are read, shown, and
   respected, but never edited from Mira. They belong to the traveller and
   Link.
@@ -156,16 +160,16 @@ Commit prefix stays `pay(NN)`. One concern per commit; stop for review.
 
 | # | Question | Options |
 |---|----------|---------|
-| D30 | What counts as autonomous | **A new `autonomous_cap_cents`, default 0.** / Reuse the per-booking cap as the autonomous cap, so existing settings carry over and auto-rebook keeps working on day one. |
-| D31 | Merchant of record for Link-paid bookings | **The supplier.** Llama's Stripe account is not involved; the row carries `link_spend_request_id`, no PaymentIntent, and no Stripe refund. Cancelling a Link-paid booking is a supplier conversation and the Stage 2 refund button does not apply to those rows. / Route the virtual card through Llama's own Stripe as a card payment, which keeps one refund path but recreates the merchant-of-record problem. |
+| D30 (settled) | What counts as autonomous | **Reuse the per-booking cap.** Existing settings carry over and auto-rebook keeps working on day one. Chosen over a new cap defaulting to zero; the connect screen shows the current number so it is a conscious carry-over. |
+| D31 (settled) | Merchant of record for Link-paid bookings | **The supplier.** Llama's Stripe account is not involved; the row carries `link_spend_request_id`, no PaymentIntent, and no Stripe refund. Cancelling a Link-paid booking is a supplier conversation and the Stage 2 refund button does not apply to those rows. |
 | D32 | Travellers who cannot or do not connect Link | **Stage 2 behaviour unchanged**: card on file inside the caps, a chat question above them. / Refuse to book above the caps without Link. |
 | D33 | Development before the OAuth client arrives | **Device-flow login with Cory's Link account**, tokens in `.env.local`, test-mode spend requests only. / Wait for the client. |
 | D34 | The $500 per-request limit while it stands | **Test with amounts under $500**, and the gates use $35 and $420 bookings. / Block Stage 3 until the limit is raised. |
-| D35 | Price drift between proposal and execution | **Re-propose.** / Use Link's raise-amount with a second approval, within a tolerance. |
+| D35 (settled) | Price drift between proposal and execution | **Re-propose.** Nothing is charged at a number the traveller did not see. Link's raise-amount with a second approval is not used. |
 | D36 | Where card preferences come from | **The traveller sets them by hand** in settings. / Infer from Link Financial Insights summaries, which needs extra scopes and a second consent. |
 | D37 | Token encryption | **AES-GCM with a server-side key in env.** / Store plaintext behind database access control. |
 | D38 | Chat approval hand-off | **A link in the chat plus the Link push notification.** / Also poll and post a follow-up message in chat when the status changes, which needs a background job the app does not have. |
-| D39 | Auto-rebook above the autonomous cap | **Ask, in chat, and wait**, even at 2am. / Send a Link approval and hope they are awake. |
+| D39 (settled) | Auto-rebook above the caps | **Ask, in chat, and wait**, even at 2am. They wake to a question, not a charge. |
 | D40 | The `report` command | **Call it after every attempt**, success or not, since it costs nothing and Stripe uses it to improve agent checkout. / Skip. |
 
 ## Definition of done
@@ -176,8 +180,8 @@ proposal, and sends a Link spend request built from the same row with their
 preferred hotel card. Their phone buzzes. They approve in the Link app. The
 chat says it is booked, Activity shows "Approved in Link, Visa …1984", and
 the membership history marks the row as paid to the supplier, not to Mira.
-The same booking at $35 with the autonomous cap set to $50 charges the card
-on file with no approval. A proposal whose amount is changed after it is
+The same booking at $35 with the per-booking cap at $50 charges the card on
+file with no approval. A proposal whose amount is changed after it is
 written is flagged and never sent. A denied request, an expired one, and a
 step-up each produce their own sentence and no row. A delayed flight rebooks
 on the card on file when under the cap and asks when over it. None of this
