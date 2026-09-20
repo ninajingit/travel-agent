@@ -10,14 +10,17 @@ awareness. Do not reopen it.
 
 ## Current stage
 
-**Stage 2: payments with Stripe, Phase B. Commits 52 onward.**
+**Stage 2 is complete and is what ships. Commits 33 to 58.**
 
 Stage 1 built the product with no billing awareness, commits 1 through 31.
 Phase A retrofitted memberships, the Concierge Pass, the ten-day Pro trial,
-and the gates that make the pricing page true, commits 33 to 50.
+and the gates that make the pricing page true, commits 33 to 50. Phase B
+made Mira charge the saved card for what it books, with caps enforced,
+refunds, and one history, commits 51 to 58.
 
-Phase B is the dangerous half: Mira charges the saved card for the flights
-and hotels it books. Decided 2026-09-20.
+`PLAN-STAGE3.md`, paying with the traveller's Link wallet, is researched and
+deferred. Do not build toward it. Any further work is a fix to Stage 2, and
+follows the rules below.
 
 ## Hard rules
 

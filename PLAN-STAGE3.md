@@ -1,8 +1,15 @@
 # PLAN-STAGE3.md
 
 Stage 3: Mira pays with the traveller's Link wallet. Commits 59 onward.
-**Draft.** Four decisions were settled on 2026-09-20 and are marked below;
-the rest carry defaults. Nothing here is built.
+
+**Deferred on 2026-09-20. Not part of the demo.** The app ships on Stage 2's
+behaviour: card on file inside the caps, a chat question above them, Llama
+Inc. as merchant of record. This plan is kept because the research is done
+and the decisions are recorded, and it starts when three things exist that
+do not today: a Link OAuth client for a hosted agent, a per-request limit
+above $500, and an answer from Duffel on virtual cards. Four decisions were
+settled and are marked below; the rest carry defaults. Nothing here is
+built.
 
 Stage 2 left Mira charging a card on file through Llama Inc.'s Stripe
 account for everything it books. That works, and it makes Llama the merchant
