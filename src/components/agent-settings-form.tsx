@@ -8,6 +8,7 @@ type Channel = "web" | "whatsapp" | "imessage";
 type Settings = {
   autoRebook: boolean;
   perBookingCapCents: number;
+  perTripCapCents: number;
   monthlyCapCents: number;
   allowedChannels: Channel[];
 };
@@ -25,6 +26,7 @@ const toCents = (dollars: string) => Math.round(Number(dollars) * 100);
 export function AgentSettingsForm({ initial }: { initial: Settings }) {
   const [autoRebook, setAutoRebook] = useState(initial.autoRebook);
   const [perBooking, setPerBooking] = useState(toDollars(initial.perBookingCapCents));
+  const [perTrip, setPerTrip] = useState(toDollars(initial.perTripCapCents));
   const [monthly, setMonthly] = useState(toDollars(initial.monthlyCapCents));
   const [channels, setChannels] = useState<Channel[]>(initial.allowedChannels);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
@@ -50,6 +52,7 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
         body: JSON.stringify({
           autoRebook,
           perBookingCapCents: toCents(perBooking),
+          perTripCapCents: toCents(perTrip),
           monthlyCapCents: toCents(monthly),
           allowedChannels: channels,
         }),
@@ -59,6 +62,7 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
         throw new Error(data.error ?? `Request failed (${response.status}).`);
       }
       setPerBooking(toDollars(data.perBookingCapCents));
+      setPerTrip(toDollars(data.perTripCapCents));
       setMonthly(toDollars(data.monthlyCapCents));
       setStatus("saved");
     } catch (e) {
@@ -97,12 +101,20 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
           The most Passage may spend for you without asking first. Anything
           above a cap comes to you as a question.
         </p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <MoneyField
             label="Per booking"
             value={perBooking}
             onChange={(v) => {
               setPerBooking(v);
+              setStatus("idle");
+            }}
+          />
+          <MoneyField
+            label="Per trip"
+            value={perTrip}
+            onChange={(v) => {
+              setPerTrip(v);
               setStatus("idle");
             }}
           />

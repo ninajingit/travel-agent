@@ -5,6 +5,7 @@ import { agentSettings } from "@/db/schema";
 export type AgentSettingsInput = {
   autoRebook: boolean;
   perBookingCapCents: number;
+  perTripCapCents: number;
   monthlyCapCents: number;
   allowedChannels: Array<"web" | "whatsapp" | "imessage">;
 };

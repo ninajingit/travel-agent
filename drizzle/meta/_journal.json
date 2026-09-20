@@ -43,6 +43,13 @@
       "when": 1789860765491,
       "tag": "0005_agent_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789862897000,
+      "tag": "0006_per_trip_cap",
+      "breakpoints": true
     }
   ]
 }

@@ -32,6 +32,10 @@ export async function PUT(request: Request) {
   if (perBooking === null) {
     return badRequest("perBookingCapCents must be a whole number of cents, 0 or more.");
   }
+  const perTrip = centsField(body.perTripCapCents);
+  if (perTrip === null) {
+    return badRequest("perTripCapCents must be a whole number of cents, 0 or more.");
+  }
   const monthly = centsField(body.monthlyCapCents);
   if (monthly === null) {
     return badRequest("monthlyCapCents must be a whole number of cents, 0 or more.");
@@ -44,6 +48,7 @@ export async function PUT(request: Request) {
   const input: AgentSettingsInput = {
     autoRebook: body.autoRebook,
     perBookingCapCents: perBooking,
+    perTripCapCents: perTrip,
     monthlyCapCents: monthly,
     allowedChannels: channels,
   };

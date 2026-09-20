@@ -172,6 +172,7 @@ async function seedAgentSettings(userId: number) {
       userId,
       autoRebook: true,
       perBookingCapCents: 75_000,
+      perTripCapCents: 200_000,
       monthlyCapCents: 300_000,
       allowedChannels: ["web"],
     })

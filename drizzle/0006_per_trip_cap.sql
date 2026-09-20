@@ -1,0 +1,1 @@
+ALTER TABLE "agent_settings" ADD COLUMN "per_trip_cap_cents" integer DEFAULT 150000 NOT NULL;

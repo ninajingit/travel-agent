@@ -92,6 +92,7 @@ export const agentSettings = pgTable("agent_settings", {
     .references(() => users.id),
   autoRebook: boolean("auto_rebook").notNull().default(false),
   perBookingCapCents: integer("per_booking_cap_cents").notNull().default(50_000),
+  perTripCapCents: integer("per_trip_cap_cents").notNull().default(150_000),
   monthlyCapCents: integer("monthly_cap_cents").notNull().default(200_000),
   allowedChannels: channelKind("allowed_channels")
     .array()
