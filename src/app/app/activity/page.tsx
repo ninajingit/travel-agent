@@ -18,6 +18,7 @@ import {
 } from "@/lib/format";
 import { Card, EmptyState, PageHeader, Pill } from "@/components/ui";
 import { CancelBooking } from "@/components/cancel-booking";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 import { refundedIntents } from "@/lib/billing/refund";
 
 function formatDay(value: Date) {
@@ -48,6 +49,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
     passCoverage(user.id),
     refundedIntents(user.id),
   ]);
+  const onFree = entitlement.plan === "free" && entitlement.passes.length === 0;
 
   const window = browsing
     ? monthBounds(browsing.year, browsing.month)
@@ -116,7 +118,14 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
         </p>
       </div>
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && onFree ? (
+        <UpgradePrompt heading="Mira has not spent anything for you" trialAvailable={user.trialUsedAt === null}>
+          On the free plan Mira plans and answers, and hands you the links to
+          book yourself. With a membership it books, watches the trip, and
+          moves you when a flight slips, and every one of those shows up here
+          with the amount and the trip.
+        </UpgradePrompt>
+      ) : rows.length === 0 ? (
         <div className="mt-4">
           <EmptyState>
             Nothing {browsing ? `in ${heading}` : "yet in this period"}. When Mira

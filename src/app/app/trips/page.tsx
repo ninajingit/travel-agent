@@ -3,10 +3,20 @@ import { ensureUser } from "@/lib/auth";
 import { listTrips } from "@/db/queries/trips";
 import { formatDateRange, tripStatusLabel, tripStatusTone } from "@/lib/format";
 import { Card, EmptyState, PageHeader, Pill } from "@/components/ui";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
+import { getEntitlement } from "@/lib/billing/entitlement";
 
 export default async function TripsPage() {
   const user = await ensureUser();
-  const rows = await listTrips(user.id);
+  const [rows, entitlement] = await Promise.all([
+    listTrips(user.id),
+    getEntitlement(user.id),
+  ]);
+  const onFree = entitlement.plan === "free" && entitlement.passes.length === 0;
+  // Only say "these are plans" when they actually are. Someone whose
+  // membership lapsed keeps the trips Mira already booked, and telling them
+  // those were never booked would be false.
+  const allPlans = rows.length > 0 && rows.every((trip) => trip.status === "planned");
 
   return (
     <div>
@@ -50,6 +60,19 @@ export default async function TripsPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {onFree && allPlans && (
+        <UpgradePrompt
+          heading="These are plans, not bookings"
+          tripId={rows[0]?.id}
+          trialAvailable={user.trialUsedAt === null}
+        >
+          Mira has worked out the flights and rooms for these, and on the free
+          plan it hands you the links to book them yourself. With a membership
+          it books them, keeps the confirmations here, and watches every
+          segment for delays and gate changes while you travel.
+        </UpgradePrompt>
       )}
     </div>
   );

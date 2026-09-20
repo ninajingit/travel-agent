@@ -20,6 +20,7 @@ import { getAgentSettings } from "@/db/queries/agent-settings";
 import { canAutoRebook, getEntitlement, hasPass } from "@/lib/billing/entitlement";
 import { CheckoutReturn } from "@/components/checkout-return";
 import { PassPurchase } from "@/components/pass-purchase";
+import { UpgradePrompt } from "@/components/upgrade-prompt";
 
 // trips.ends_at is a calendar date string, not a timestamp.
 function formatDay(endsAt: string) {
@@ -153,7 +154,18 @@ export default async function TripPage({
       <h2 className="mt-10 text-sm font-semibold uppercase tracking-wide text-muted">
         Itinerary
       </h2>
-      {trip.segments.length === 0 ? (
+      {trip.segments.length === 0 && entitlement.plan === "free" && !covered ? (
+        <UpgradePrompt
+          heading="Mira can book this one"
+          tripId={trip.id}
+          trialAvailable={user.trialUsedAt === null}
+        >
+          It has the flights and the room worked out. On the free plan it
+          hands you the links and you book them yourself. With a membership,
+          or a pass for this trip alone, Mira books them, keeps the
+          confirmations here, and watches them while you travel.
+        </UpgradePrompt>
+      ) : trip.segments.length === 0 ? (
         <div className="mt-3">
           <EmptyState>
             Nothing booked yet. Flights, stays, and trains show up here as
