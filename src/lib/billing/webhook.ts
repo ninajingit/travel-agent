@@ -7,6 +7,7 @@ import {
   subscriptions,
   users,
 } from "@/db/schema";
+import { refreshDemoForPlan } from "@/lib/demo/tier";
 import { LOOKUP_KEYS } from "./catalog";
 import { stripe } from "./stripe";
 
@@ -152,6 +153,10 @@ export async function upsertSubscription(subscription: Stripe.Subscription) {
       .set({ trialUsedAt: new Date() })
       .where(eq(users.id, user.id));
   }
+
+  // Now that the plan can act, fill in the half of the demo Free could not
+  // have had: the itineraries, the delayed flight, and the history.
+  await refreshDemoForPlan(user.id);
 }
 
 /**
@@ -214,6 +219,9 @@ export async function syncCheckoutSession(session: Stripe.Checkout.Session) {
         currency: (session.currency ?? "usd").toUpperCase(),
       })
       .onConflictDoNothing();
+
+    // A pass makes Mira able to act on that trip, so the demo fills in too.
+    await refreshDemoForPlan(user.id);
   }
 }
 

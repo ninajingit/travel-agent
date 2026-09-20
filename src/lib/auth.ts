@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { seedDemoData } from "@/lib/demo";
+import { demoTierFor } from "@/lib/demo/tier";
 
 // Returns the users row for the signed-in person, creating it on their first
 // visit. Clerk owns the identity; this row is what the rest of the schema
@@ -43,9 +44,11 @@ export const ensureUser = cache(async () => {
     .onConflictDoUpdate({ target: users.clerkId, set: { email, name } })
     .returning();
 
-  // Everyone starts with the demo trips, chats, and activity.
+  // Everyone starts with the demo trips, chats, and activity, filled in to
+  // what their account can actually do. A new account is on Free, so it gets
+  // the planning half; the rest arrives when they upgrade.
   if (!existing) {
-    await seedDemoData(row.id);
+    await seedDemoData(row.id, await demoTierFor(row.id));
   }
   return row;
 });

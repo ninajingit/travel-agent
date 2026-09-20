@@ -7,6 +7,13 @@ type Turn = { role: "user" | "agent"; body: string; at: string };
 export type ChatSeed = {
   title: string;
   trip: "Lisbon" | "Tokyo" | null;
+  /**
+   * True when the thread only makes sense once Mira has booked the trip or
+   * is watching it: holding seats, changing a ticket, a gate change, a lost
+   * bag. On Free there is no itinerary for any of it to refer to, so these
+   * are held back and appear on upgrade.
+   */
+  requiresMembership?: boolean;
   turns: Turn[];
 };
 
@@ -40,6 +47,7 @@ export const CHATS: ChatSeed[] = [
   {
     title: "Squeeze Hokkaido into this trip",
     trip: "Tokyo",
+    requiresMembership: true,
     turns: [
       {
         role: "user",
@@ -106,6 +114,7 @@ export const CHATS: ChatSeed[] = [
   {
     title: "Aisle seat on the Lisbon flights",
     trip: "Lisbon",
+    requiresMembership: true,
     turns: [
       { role: "user", at: "2026-09-15T13:12:00Z", body: "Can you get me an aisle seat on the Lisbon flight?" },
       {
@@ -124,6 +133,7 @@ export const CHATS: ChatSeed[] = [
   {
     title: "Gate change for NH 9",
     trip: "Tokyo",
+    requiresMembership: true,
     turns: [
       {
         role: "agent",
@@ -141,6 +151,7 @@ export const CHATS: ChatSeed[] = [
   {
     title: "Bag did not arrive at Haneda",
     trip: "Tokyo",
+    requiresMembership: true,
     turns: [
       { role: "user", at: "2026-09-18T11:52:00Z", body: "My bag didn't come out at Haneda" },
       {
@@ -197,6 +208,7 @@ export const CHATS: ChatSeed[] = [
   {
     title: "Extend Lisbon by two days",
     trip: "Lisbon",
+    requiresMembership: true,
     turns: [
       { role: "user", at: "2026-09-16T21:04:00Z", body: "Can I extend the Lisbon trip by two days?" },
       {

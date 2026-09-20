@@ -15,6 +15,16 @@ import { CHATS } from "./chats";
 // two trips, saved places, past chats, and activity, so the product can be
 // walked end to end by anyone. Every write is keyed on something stable, so
 // running this twice for the same person changes nothing.
+//
+// It is seeded to the plan. A new account is on Free, where Mira may plan but
+// not book, so it gets the destinations, the trips as plans, and the threads
+// where Mira answers questions. The itineraries, the confirmation codes, the
+// delayed flight, and the booking history are all things Mira did with money,
+// so they are held back until the account can pay for them, and written by
+// the same seed running again on upgrade.
+
+/** What the demo has been filled in to. Free is planning only. */
+export type DemoTier = "free" | "booking";
 
 const DESTINATIONS = [
   { name: "Lisbon", country: "Portugal", notes: "Prefer TAP nonstop from EWR." },
@@ -127,6 +137,7 @@ const TRIPS: Array<{
 async function seedTrips(
   userId: number,
   places: Array<{ id: number; name: string }>,
+  tier: DemoTier,
 ) {
   const rows = [];
   for (const input of TRIPS) {
@@ -141,23 +152,50 @@ async function seedTrips(
         eq(trips.startsAt, input.startsAt),
       ),
     });
+
     if (existing) {
+      // On upgrade, fill in the trip this account already has rather than
+      // making a second one. Only a trip still exactly as Free left it is
+      // touched: planned, and with nothing on the itinerary. Anything the
+      // person has changed is theirs and is left alone.
+      if (tier === "booking" && existing.status === "planned") {
+        const already = await db.query.tripSegments.findFirst({
+          where: eq(tripSegments.tripId, existing.id),
+        });
+        if (!already) {
+          await db
+            .insert(tripSegments)
+            .values(input.segments.map((seg) => ({ ...seg, tripId: existing.id })));
+          const [promoted] = await db
+            .update(trips)
+            .set({ status: input.status })
+            .where(eq(trips.id, existing.id))
+            .returning();
+          rows.push(promoted);
+          continue;
+        }
+      }
       rows.push(existing);
       continue;
     }
+
     const [trip] = await db
       .insert(trips)
       .values({
         userId,
         destinationId: place.id,
-        status: input.status,
+        // On Free the trip is a plan. Mira hands you the links; the
+        // itinerary and its confirmation codes arrive with a membership.
+        status: tier === "booking" ? input.status : "planned",
         startsAt: input.startsAt,
         endsAt: input.endsAt,
       })
       .returning();
-    await db
-      .insert(tripSegments)
-      .values(input.segments.map((s) => ({ ...s, tripId: trip.id })));
+    if (tier === "booking") {
+      await db
+        .insert(tripSegments)
+        .values(input.segments.map((seg) => ({ ...seg, tripId: trip.id })));
+    }
     rows.push(trip);
   }
   return rows;
@@ -185,9 +223,12 @@ async function seedChats(
   userId: number,
   tripRows: Array<{ id: number; destinationId: number }>,
   places: Array<{ id: number; name: string }>,
+  tier: DemoTier,
 ) {
   let created = 0;
   for (const chat of CHATS) {
+    // Threads about a booked trip have no itinerary to refer to on Free.
+    if (chat.requiresMembership && tier !== "booking") continue;
     const existing = await db.query.conversations.findFirst({
       where: and(eq(conversations.userId, userId), eq(conversations.title, chat.title)),
     });
@@ -239,7 +280,12 @@ async function seedTransactions(
   userId: number,
   tripRows: Array<{ id: number; destinationId: number }>,
   places: Array<{ id: number; name: string }>,
+  tier: DemoTier,
 ) {
+  // Every one of these is money Mira spent. Free never had an agent action,
+  // so it has none of them, and the Activity page says so rather than
+  // showing a history that could not have happened.
+  if (tier !== "booking") return 0;
   let created = 0;
   for (const input of TRANSACTIONS) {
     const existing = await db.query.agentTransactions.findFirst({
@@ -267,13 +313,21 @@ async function seedTransactions(
   return created;
 }
 
-export async function seedDemoData(userId: number) {
+/**
+ * Fill the demo in to a tier. Safe to run any number of times.
+ *
+ * Called on first sign-in with whatever the account can do then, and again
+ * whenever the plan changes, which is how upgrading reveals the half of the
+ * demo Free could not have had.
+ */
+export async function seedDemoData(userId: number, tier: DemoTier = "free") {
   const places = await seedDestinations(userId);
-  const tripRows = await seedTrips(userId, places);
+  const tripRows = await seedTrips(userId, places, tier);
   await seedAgentSettings(userId);
-  const newChats = await seedChats(userId, tripRows, places);
-  const newTransactions = await seedTransactions(userId, tripRows, places);
+  const newChats = await seedChats(userId, tripRows, places, tier);
+  const newTransactions = await seedTransactions(userId, tripRows, places, tier);
   return {
+    tier,
     destinations: places.length,
     trips: tripRows.length,
     chats: { total: CHATS.length, created: newChats },
