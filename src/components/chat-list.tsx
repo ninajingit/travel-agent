@@ -23,7 +23,7 @@ export function ChatList({ initial }: { initial: Thread[] }) {
   if (threads.length === 0) {
     return (
       <p className="mt-3 text-muted">
-        No chats yet. Your conversations with Passage will be listed here.
+        No chats yet. Your conversations with Nomi will be listed here.
       </p>
     );
   }

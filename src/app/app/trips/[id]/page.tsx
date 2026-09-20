@@ -80,7 +80,7 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
         </div>
       ) : watching ? (
         <p className="mt-8 text-sm text-muted">
-          Passage is watching this trip. Nothing needs your attention right now.
+          Nomi is watching this trip. Nothing needs your attention right now.
         </p>
       ) : null}
 
@@ -91,7 +91,7 @@ export default async function TripPage({ params }: PageProps<"/app/trips/[id]">)
         <div className="mt-3">
           <EmptyState>
             Nothing booked yet. Flights, stays, and trains show up here as
-            Passage books them.
+            Nomi books them.
           </EmptyState>
         </div>
       ) : (

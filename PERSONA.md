@@ -5,9 +5,9 @@ Read this before writing user-facing text.
 
 ## The founder
 
-**Priya Raman, 34. Founder and CEO of Passage.**
+**Priya Raman, 34. Founder and CEO of Llama Inc., the company behind Nomi.**
 
-Passage is an AI travel agent that runs over chat and SMS. It does four
+Nomi is an AI travel agent that runs over chat and SMS. It does four
 jobs, in the order a trip happens:
 
 1. **Plan.** Turn "long weekend, under four hours away, all-in under $3,000"
@@ -102,7 +102,7 @@ her. Now the pre-seed is half gone and the board wants recurring revenue.
    value is the planning, the monitoring, the rebooking, or the fact that
    Grace exists.
 3. **Trust.** An AI agent with a card on file is the scariest thing about her
-   product and she knows it. One "Passage charged me $340 and I don't know
+   product and she knows it. One "Nomi charged me $340 and I don't know
    why" thread ends the company.
 
 Knowingly deferred: tax compliance done properly, multi-currency, invoicing,
@@ -120,6 +120,6 @@ dark, big type, chat first) and the length (shorter), not the honesty.
 Casual is fine; hype is not. "You're covered until Sunday" works. "Get ready
 for an epic adventure!" does not.
 
-Good: "No trips yet. Add a destination and Passage will start watching fares."
+Good: "No trips yet. Add a destination and Nomi will start watching fares."
 Bad: "Looks like it's a bit empty in here! Let's get you started on your next
 adventure."

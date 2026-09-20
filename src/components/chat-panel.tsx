@@ -161,7 +161,7 @@ export function ChatPanel({
           {busy && (
             <li className="flex justify-start">
               <div className="rounded-card border border-border bg-surface px-4 py-3 text-sm text-muted">
-                Passage is typing
+                Nomi is typing
               </div>
             </li>
           )}
@@ -187,7 +187,7 @@ export function ChatPanel({
           }}
           rows={1}
           placeholder={placeholder}
-          aria-label="Message Passage"
+          aria-label="Message Nomi"
           className="max-h-40 min-h-[2.75rem] flex-1 resize-none bg-transparent px-2 py-2.5 text-base text-fg outline-none placeholder:text-muted/60"
         />
         <Button type="submit" disabled={busy || draft.trim() === ""}>

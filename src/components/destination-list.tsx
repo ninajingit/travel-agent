@@ -54,7 +54,7 @@ export function DestinationList({ initial }: { initial: Destination[] }) {
 
       {rows.length === 0 ? (
         <EmptyState>
-          Nothing saved yet. Add a place you are curious about and Passage
+          Nothing saved yet. Add a place you are curious about and Nomi
           will start watching fares and collecting ideas.
         </EmptyState>
       ) : (

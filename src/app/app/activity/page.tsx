@@ -27,7 +27,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
     <div>
       <PageHeader
         title="Activity"
-        intro="Every time Passage books, rebooks, or cancels something for you, it is listed here."
+        intro="Every time Nomi books, rebooks, or cancels something for you, it is listed here."
       />
 
       <div className="mt-8 flex flex-wrap items-end justify-between gap-3">
@@ -55,7 +55,7 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
         <div className="mt-4">
           <EmptyState>
             Nothing {isCurrent ? "yet this month" : `in ${formatMonth(year, month)}`}. When
-            Passage books, rebooks, or cancels something for you, it shows up here.
+            Nomi books, rebooks, or cancels something for you, it shows up here.
           </EmptyState>
         </div>
       ) : (

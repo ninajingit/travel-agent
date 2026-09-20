@@ -13,7 +13,7 @@ type Settings = {
   allowedChannels: Channel[];
 };
 
-// Channels Passage does not deliver on yet. Connect explains itself instead
+// Channels Nomi does not deliver on yet. Connect explains itself instead
 // of doing anything.
 const UPCOMING_CHANNELS: Array<{ value: Channel; label: string; note: string }> = [
   { value: "whatsapp", label: "WhatsApp", note: "Messages and alerts on WhatsApp." },
@@ -79,7 +79,7 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
           <span>
             <span className="font-semibold">Rebook automatically</span>
             <span className="mt-0.5 block text-sm text-muted">
-              When a flight is delayed or cancelled, Passage books the
+              When a flight is delayed or cancelled, Nomi books the
               replacement without asking, within the caps below. Off means it
               suggests and waits for you.
             </span>
@@ -90,7 +90,7 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
       <Card className="p-5">
         <h2 className="font-display text-lg font-bold">Spending caps</h2>
         <p className="mt-0.5 text-sm text-muted">
-          The most Passage may spend for you without asking first. Anything
+          The most Nomi may spend for you without asking first. Anything
           above a cap comes to you as a question.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -123,7 +123,7 @@ export function AgentSettingsForm({ initial }: { initial: Settings }) {
 
       <Card className="p-5">
         <h2 className="font-display text-lg font-bold">Channels</h2>
-        <p className="mt-0.5 text-sm text-muted">Where Passage may reach you.</p>
+        <p className="mt-0.5 text-sm text-muted">Where Nomi may reach you.</p>
         <ul className="mt-3 divide-y divide-border">
           <li className="flex items-center justify-between gap-3 py-3">
             <div>
@@ -185,7 +185,7 @@ function ChannelRow({ label, note }: { label: string; note: string }) {
       <div>
         <div className="font-medium">{label}</div>
         <div className="text-sm text-muted">
-          {asked ? `Not available yet. Passage will tell you when ${label} is ready.` : note}
+          {asked ? `Not available yet. Nomi will tell you when ${label} is ready.` : note}
         </div>
       </div>
       <Button type="button" variant="secondary" onClick={() => setAsked(true)} disabled={asked}>

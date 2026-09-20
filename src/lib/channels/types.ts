@@ -1,4 +1,4 @@
-// A channel is a place Passage can talk to a person: the chat in this app,
+// A channel is a place Nomi can talk to a person: the chat in this app,
 // WhatsApp, iMessage. The agent speaks to one interface; each adapter knows
 // how to deliver on its own network.
 

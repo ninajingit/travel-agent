@@ -1,4 +1,6 @@
-# Passage
+# Nomi
+
+By Llama Inc.
 
 An AI travel agent that plans trips, books them, and watches them. When a
 flight slips or a fare drops on a refundable ticket, the agent rebooks

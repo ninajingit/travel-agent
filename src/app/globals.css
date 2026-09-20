@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  Passage design tokens. Dark is the base; light follows the system setting.
+  Nomi design tokens. Dark is the base; light follows the system setting.
   Components use the semantic names (bg-surface, text-muted, bg-accent), never
   raw palette values, so both modes come from this one file.
 */

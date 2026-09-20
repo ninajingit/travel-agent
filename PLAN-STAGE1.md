@@ -1,6 +1,6 @@
 # PLAN-STAGE1.md
 
-Stage 1: build the Passage application. No payments, no billing, no
+Stage 1: build the Nomi application. No payments, no billing, no
 subscriptions. Commits 1 through 28.
 
 A later stage, run in a separate session, adds Stripe starting at commit 29.

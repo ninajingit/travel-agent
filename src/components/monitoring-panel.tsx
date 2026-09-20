@@ -82,15 +82,15 @@ export function MonitoringPanel(props: Props) {
             </Button>
             <span className="text-sm text-muted">
               {props.autoRebook
-                ? "Auto-rebook is on. Passage would do this without asking once the delay is confirmed."
-                : "Auto-rebook is off, so Passage waits for you."}
+                ? "Auto-rebook is on. Nomi would do this without asking once the delay is confirmed."
+                : "Auto-rebook is off, so Nomi waits for you."}
             </span>
           </div>
           {error && <ErrorText className="mt-3">{error}</ErrorText>}
         </div>
       ) : (
         <p className="mt-4 text-sm text-muted">
-          No better option yet. Passage checks every few minutes and will suggest one here.
+          No better option yet. Nomi checks every few minutes and will suggest one here.
         </p>
       )}
     </Card>

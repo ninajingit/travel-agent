@@ -1,4 +1,4 @@
-# Passage
+# Nomi
 
 An AI travel agent that plans trips, books them, and monitors them. Web app
 plus a chat surface.
