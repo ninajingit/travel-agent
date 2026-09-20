@@ -9,6 +9,15 @@ import { stripe } from "@/lib/billing/stripe";
 export type HistoryEntry = {
   id: string;
   kind: "membership" | "pass" | "booking" | "rebooking" | "cancellation";
+  /**
+   * Whose money this is.
+   *
+   * `mira` is what Llama Inc. charged for Mira itself: a membership or a
+   * Concierge Pass. `travel` is what Mira spent with an airline or a hotel
+   * on the traveller's behalf, which is not our revenue and never was.
+   * Both land on the same card, so the difference has to be said out loud.
+   */
+  group: "mira" | "travel";
   at: string;
   amountCents: number;
   currency: string;
@@ -35,8 +44,11 @@ export async function GET() {
   if (!user) return unauthorized();
   if (!user.stripeCustomerId) return NextResponse.json({ entries: [] });
 
-  const [invoices, passes, actions] = await Promise.all([
+  const [invoices, charges, passes, actions] = await Promise.all([
     stripe().invoices.list({ customer: user.stripeCustomerId, limit: 24 }),
+    // One call rather than one per row: everything Stripe charged this
+    // customer, so a payment made outside an invoice still has its receipt.
+    stripe().charges.list({ customer: user.stripeCustomerId, limit: 100 }),
     db
       .select({
         id: conciergePasses.id,
@@ -44,6 +56,7 @@ export async function GET() {
         currency: conciergePasses.currency,
         purchasedAt: conciergePasses.purchasedAt,
         tripId: conciergePasses.tripId,
+        paymentIntentId: conciergePasses.stripePaymentIntentId,
         destination: destinations.name,
       })
       .from(conciergePasses)
@@ -59,6 +72,7 @@ export async function GET() {
         description: agentTransactions.description,
         occurredAt: agentTransactions.occurredAt,
         tripId: agentTransactions.tripId,
+        paymentIntentId: agentTransactions.stripePaymentIntentId,
       })
       .from(agentTransactions)
       .where(
@@ -72,6 +86,16 @@ export async function GET() {
       .orderBy(desc(agentTransactions.occurredAt)),
   ]);
 
+  // Receipts live on the charge, not the intent, so map one to the other.
+  const receipts = new Map<string, string>();
+  for (const charge of charges.data) {
+    const intent =
+      typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : charge.payment_intent?.id;
+    if (intent && charge.receipt_url) receipts.set(intent, charge.receipt_url);
+  }
+
   const entries: HistoryEntry[] = [
     ...invoices.data
       // A draft or void invoice is not money that moved.
@@ -79,6 +103,7 @@ export async function GET() {
       .map((invoice) => ({
         id: invoice.id ?? `inv_${invoice.created}`,
         kind: "membership" as const,
+        group: "mira" as const,
         at: new Date(invoice.created * 1000).toISOString(),
         amountCents: invoice.amount_paid,
         currency: invoice.currency.toUpperCase(),
@@ -89,20 +114,28 @@ export async function GET() {
     ...passes.map((pass) => ({
       id: `pass_${pass.id}`,
       kind: "pass" as const,
+      group: "mira" as const,
       at: pass.purchasedAt.toISOString(),
       amountCents: pass.amountCents,
       currency: pass.currency,
       description: `Concierge Pass, ${pass.destination} trip`,
       tripId: pass.tripId,
+      href: pass.paymentIntentId
+        ? receipts.get(pass.paymentIntentId)
+        : undefined,
     })),
     ...actions.map((action) => ({
       id: `act_${action.id}`,
       kind: action.kind,
+      group: "travel" as const,
       at: action.occurredAt.toISOString(),
       amountCents: action.amountCents,
       currency: action.currency,
       description: action.description,
       tripId: action.tripId ?? undefined,
+      href: action.paymentIntentId
+        ? receipts.get(action.paymentIntentId)
+        : undefined,
     })),
   ].sort((a, b) => b.at.localeCompare(a.at));
 

@@ -15,10 +15,18 @@ const LABEL = {
 
 const TONE = {
   membership: "violet",
-  pass: "accent",
+  pass: "violet",
   booking: "neutral",
   rebooking: "neutral",
   cancellation: "danger",
+} as const;
+
+// The distinction that matters most on this page. A membership is money
+// Llama Inc. keeps; a flight is money that went to an airline and was never
+// ours. They arrive on the same card statement looking identical.
+const WHOSE = {
+  mira: "to Mira",
+  travel: "on your behalf",
 } as const;
 
 function money(cents: number, currency: string) {
@@ -78,8 +86,34 @@ export function BillingHistory() {
     );
   }
 
+  const total = (group: "mira" | "travel") =>
+    entries
+      .filter((entry) => entry.group === group)
+      .reduce((sum, entry) => sum + entry.amountCents, 0);
+  const currency = entries[0]?.currency ?? "USD";
+
   return (
-    <Card className="mt-4 divide-y divide-border">
+    <>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <Card className="p-4">
+          <p className="text-sm text-muted">What you paid Mira</p>
+          <p className="mt-1 font-display text-2xl font-bold">
+            {money(total("mira"), currency)}
+          </p>
+          <p className="mt-1 text-xs text-muted">Membership and Concierge Passes.</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-sm text-muted">What Mira paid on your behalf</p>
+          <p className="mt-1 font-display text-2xl font-bold">
+            {money(total("travel"), currency)}
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Flights, rooms and tickets, after refunds. Never our money.
+          </p>
+        </Card>
+      </div>
+
+      <Card className="mt-3 divide-y divide-border">
       {entries.map((entry) => (
         <div
           key={entry.id}
@@ -89,6 +123,7 @@ export function BillingHistory() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Pill tone={TONE[entry.kind]}>{LABEL[entry.kind]}</Pill>
+              <span className="text-xs text-muted">{WHOSE[entry.group]}</span>
               {entry.tripId && (
                 <Link
                   href={`/app/trips/${entry.tripId}`}
@@ -113,6 +148,7 @@ export function BillingHistory() {
           </div>
         </div>
       ))}
-    </Card>
+      </Card>
+    </>
   );
 }
