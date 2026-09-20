@@ -93,19 +93,20 @@ Commit prefix `pay(NN)`. One concern per commit; stop for review after each.
 | 33 | CLAUDE.md Stage 1 rules replaced with Stage 2 rules; this plan updated with the settled decisions | docs only |
 | 34 | `stripe` SDK, server-side client pinned to the API version, env vars in `.env.example` and Vercel | a script lists products from the sandbox |
 | 35 | catalog: `lib/billing/catalog.ts` resolves prices by lookup key; an idempotent script sets the keys on the existing prices and creates anything missing | script prints three prices by key, twice, with the same result |
-| 36 | schema: `stripe_customer_id`, `trial_used_at`, `subscriptions`, `concierge_passes`, `stripe_events` | migration applies on dev and prod |
-| 37 | webhook route: signature check, idempotent event store, handlers for `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed` | `stripe trigger` writes rows; replaying the same event changes nothing |
-| 38 | checkout: `POST /api/checkout` for `plus`, `pro`, or `pass` (with `tripId`); creates or reuses the Stripe customer; refuses with 409 and a Portal link if a subscription is already active or trialing | test card completes; subscription row appears via webhook; a second call returns 409 |
-| 39 | entitlement: `getEntitlement(userId)` from the mirror tables plus this period's `agent_transactions` | free, plus, pro, and pass cases return the right numbers |
-| 40 | membership page `/app/membership` in the avatar menu: plan, renewal date, actions used, passes, buttons to the Customer Portal via `POST /api/billing/portal` | in browser, all three states |
-| 41 | pricing page goes live: each card gets a button; signed-out goes through sign-in and back to checkout; signed-in shows the current plan | click Plus, land on Stripe Checkout |
-| 42 | return from checkout: success page confirms the session server-side and shows a waiting state if the webhook has not landed | refresh after purchase shows the plan |
-| 43 | gates: chat booking on Free replies with links and an offer to start Plus; rebook on Free is refused; actions past the allowance are refused with the count | Free cannot book, Plus can until ten |
-| 44 | auto-rebook requires Pro or a pass on the trip; settings page explains why the toggle is off | toggle disabled on Free and Plus |
-| 45 | activity: "3 of 10 actions this period", period from the subscription, pass-covered actions labelled and not counted | matches rows |
-| 46 | Concierge Pass on the trip page: buy, Covered badge, dates covered | purchase, trip shows Covered, its actions are free |
-| 47 | lifecycle: `past_due` banner with a fix-your-card link, `canceled` drops to Free at period end, "ends on" copy when `cancel_at_period_end` | `stripe trigger` scenarios |
-| 48 | trial: Checkout starts Pro with a ten-day trial once per person; `trialing` grants Pro; membership page and pricing page say when the first charge lands; `customer.subscription.trial_will_end` is handled | a new account gets Pro for ten days; the same account cannot start a second trial |
+| 36 | the Free product and its $0 price are archived; Free is the absence of a subscription (D25) | catalog syncs to three keys |
+| 37 | schema: `stripe_customer_id`, `trial_used_at`, `subscriptions`, `concierge_passes`, `stripe_events` | migration applies on dev and prod |
+| 38 | webhook route: signature check, idempotent event store, handlers for `checkout.session.completed`, `customer.subscription.created/updated/deleted`, `invoice.paid`, `invoice.payment_failed` | `stripe trigger` writes rows; replaying the same event changes nothing |
+| 39 | checkout: `POST /api/checkout` for `plus`, `pro`, or `pass` (with `tripId`); creates or reuses the Stripe customer; refuses with 409 and a Portal link if a subscription is already active or trialing | test card completes; subscription row appears via webhook; a second call returns 409 |
+| 40 | entitlement: `getEntitlement(userId)` from the mirror tables plus this period's `agent_transactions` | free, plus, pro, and pass cases return the right numbers |
+| 41 | membership page `/app/membership` in the avatar menu: plan, renewal date, actions used, passes, buttons to the Customer Portal via `POST /api/billing/portal` | in browser, all three states |
+| 42 | pricing page goes live: each card gets a button; signed-out goes through sign-in and back to checkout; signed-in shows the current plan | click Plus, land on Stripe Checkout |
+| 43 | return from checkout: success page confirms the session server-side and shows a waiting state if the webhook has not landed | refresh after purchase shows the plan |
+| 44 | gates: chat booking on Free replies with links and an offer to start Plus; rebook on Free is refused; actions past the allowance are refused with the count | Free cannot book, Plus can until ten |
+| 45 | auto-rebook requires Pro or a pass on the trip; settings page explains why the toggle is off | toggle disabled on Free and Plus |
+| 46 | activity: "3 of 10 actions this period", period from the subscription, pass-covered actions labelled and not counted | matches rows |
+| 47 | Concierge Pass on the trip page: buy, Covered badge, dates covered | purchase, trip shows Covered, its actions are free |
+| 48 | lifecycle: `past_due` banner with a fix-your-card link, `canceled` drops to Free at period end, "ends on" copy when `cancel_at_period_end` | `stripe trigger` scenarios |
+| 49 | trial: Checkout starts Pro with a ten-day trial once per person; `trialing` grants Pro; membership page and pricing page say when the first charge lands; `customer.subscription.trial_will_end` is handled | a new account gets Pro for ten days; the same account cannot start a second trial |
 
 ### Notes on the trial
 
@@ -131,7 +132,7 @@ Commit prefix `pay(NN)`. One concern per commit; stop for review after each.
 ### Notes on the allowance
 
 - The period is the subscription's billing period, read from the mirror.
-  The Activity page counts a UTC calendar month today; commit 45 changes it.
+  The Activity page counts a UTC calendar month today; commit 46 changes it.
 - Free has no period, so it has no allowance and no count to show.
 - Actions on a pass-covered trip never count, whatever the plan.
 - A Pro to Plus downgrade is scheduled for period end, so nobody wakes up
@@ -146,12 +147,12 @@ agent-initiated variable charges, on one saved card, in one readable history.
 
 | # | Commit | Gate |
 |---|--------|------|
-| 49 | Checkout saves the card for later off-session use; consent copy says Mira will charge it for bookings inside your caps | payment method attached to the customer |
-| 50 | `recordTransaction` charges an off-session PaymentIntent for the booking amount, stores `stripe_payment_intent_id`; a card that needs authentication produces a message with a link rather than a silent failure | charge appears on the customer; 3DS test card produces the message |
-| 51 | cancellations refund | refund appears in Stripe |
-| 52 | membership page shows one history: invoices and booking charges together | matches Stripe |
+| 50 | Checkout saves the card for later off-session use; consent copy says Mira will charge it for bookings inside your caps | payment method attached to the customer |
+| 51 | `recordTransaction` charges an off-session PaymentIntent for the booking amount, stores `stripe_payment_intent_id`; a card that needs authentication produces a message with a link rather than a silent failure | charge appears on the customer; 3DS test card produces the message |
+| 52 | cancellations refund | refund appears in Stripe |
+| 53 | membership page shows one history: invoices and booking charges together | matches Stripe |
 
-Note for commit 49: subscription-mode Checkout already saves the card for
+Note for commit 50: subscription-mode Checkout already saves the card for
 subsequent invoices. Charging it for a booking is a different purpose, so it
 needs its own consent, not a reuse of the subscription mandate.
 
@@ -173,7 +174,7 @@ The three prices were created by hand; commit 35 gave them their lookup keys
 (`plus_monthly`, `pro_monthly`, `concierge_pass`). The Portal allows switching between Plus and Pro, prorates
 upgrades, schedules decreases for period end, cancels at period end, shows
 invoices, and ends a trial on plan change. The webhook endpoint points at a
-route that does not exist until commit 37; Stripe retries, and that is fine.
+route that does not exist until commit 38; Stripe retries, and that is fine.
 
 ## Things only Cory can do
 

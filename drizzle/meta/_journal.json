@@ -50,6 +50,13 @@
       "when": 1789862897000,
       "tag": "0006_per_trip_cap",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789878810621,
+      "tag": "0007_billing",
+      "breakpoints": true
     }
   ]
 }

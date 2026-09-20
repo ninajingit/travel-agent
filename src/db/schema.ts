@@ -16,6 +16,13 @@ export const users = pgTable("users", {
   clerkId: text("clerk_id").notNull().unique(),
   email: text("email").notNull(),
   name: text("name"),
+  // Set the first time this person reaches Stripe, not at sign-up. Someone who
+  // never pays never gets a Stripe customer.
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  // Stripe does not stop a person starting a second trial on a second
+  // subscription, so the app remembers. Set when a trialing subscription is
+  // first seen, and never cleared.
+  trialUsedAt: timestamp("trial_used_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -148,4 +155,82 @@ export const agentTransactions = pgTable("agent_transactions", {
   occurredAt: timestamp("occurred_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+});
+
+export const plan = pgEnum("plan", ["plus", "pro"]);
+
+// A mirror of a Stripe subscription, written by the webhook and read by
+// everything else, so no page render waits on a Stripe call.
+//
+// There is a row per Stripe subscription, not per person: cancelling and
+// coming back later leaves both. The current one is the row whose status is
+// still live. Free is the absence of any such row, never a $0 subscription.
+//
+// `status` is text rather than an enum because it is Stripe's word, and
+// Stripe may add to the list without asking. The app compares against the
+// handful of values it knows and treats the rest as not-entitled.
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+  plan: plan("plan").notNull(),
+  status: text("status").notNull(),
+  priceLookupKey: text("price_lookup_key").notNull(),
+  // Stripe moved these onto the subscription's items in 2025-03-31.basil.
+  // They are flattened back to the subscription here because Mira sells one
+  // item per subscription; the webhook reads items.data[0].
+  currentPeriodStart: timestamp("current_period_start", {
+    withTimezone: true,
+  }).notNull(),
+  currentPeriodEnd: timestamp("current_period_end", {
+    withTimezone: true,
+  }).notNull(),
+  trialEnd: timestamp("trial_end", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// One trip bought out of a membership. Coverage runs from purchase to the
+// trip's end date as it stands at the time of asking, so a trip that gets
+// extended stays covered; that is why no end date is stored here.
+export const conciergePasses = pgTable("concierge_passes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  tripId: integer("trip_id")
+    .notNull()
+    .references(() => trips.id),
+  // Unique so a replayed checkout.session.completed cannot grant twice.
+  stripeCheckoutSessionId: text("stripe_checkout_session_id")
+    .notNull()
+    .unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  // What Checkout reported. With Adaptive Pricing on, a customer abroad may
+  // have paid in their own currency, so this is not always USD 15000.
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("USD"),
+  purchasedAt: timestamp("purchased_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+// Every Stripe event this app has seen, keyed by Stripe's own event id. The
+// webhook inserts here before it does any work, so a redelivery collides and
+// becomes a no-op. processed_at stays null if the handler threw, which is how
+// a failed event is told apart from one that was never received.
+export const stripeEvents = pgTable("stripe_events", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  receivedAt: timestamp("received_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  processedAt: timestamp("processed_at", { withTimezone: true }),
 });
