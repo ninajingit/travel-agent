@@ -29,6 +29,7 @@ export function listTransactionsBetween(userId: number, start: Date, end: Date) 
       description: agentTransactions.description,
       occurredAt: agentTransactions.occurredAt,
       tripId: agentTransactions.tripId,
+      stripePaymentIntentId: agentTransactions.stripePaymentIntentId,
       destination: destinations.name,
     })
     .from(agentTransactions)

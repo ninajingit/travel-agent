@@ -17,6 +17,8 @@ import {
   transactionKindTone,
 } from "@/lib/format";
 import { Card, EmptyState, PageHeader, Pill } from "@/components/ui";
+import { CancelBooking } from "@/components/cancel-booking";
+import { refundedIntents } from "@/lib/billing/refund";
 
 function formatDay(value: Date) {
   return value.toLocaleDateString("en-US", {
@@ -41,9 +43,10 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
   const raw = (await searchParams).month;
   const browsing = typeof raw === "string" ? parseMonth(raw) : null;
 
-  const [entitlement, coverage] = await Promise.all([
+  const [entitlement, coverage, refunded] = await Promise.all([
     getEntitlement(user.id),
     passCoverage(user.id),
+    refundedIntents(user.id),
   ]);
 
   const window = browsing
@@ -138,6 +141,13 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
                     )}
                   </div>
                   <div className="mt-1.5 text-sm">{row.description}</div>
+                {row.kind !== "cancellation" &&
+                  row.stripePaymentIntentId &&
+                  !refunded.has(row.stripePaymentIntentId) && (
+                    <div className="mt-2">
+                      <CancelBooking transactionId={row.id} />
+                    </div>
+                  )}
                 </div>
                 <div className="font-mono text-sm font-semibold sm:text-right">
                   {formatMoney(row.amountCents, row.currency)}
