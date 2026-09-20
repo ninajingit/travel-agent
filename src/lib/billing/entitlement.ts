@@ -82,6 +82,45 @@ function endOfTripDay(endsAt: string) {
   return new Date(`${endsAt}T23:59:59.999Z`);
 }
 
+/** When each trip is covered by a pass, keyed by trip. */
+export type Coverage = Map<number, { from: Date; to: Date }>;
+
+export async function passCoverage(userId: number): Promise<Coverage> {
+  const rows = await db
+    .select({
+      tripId: conciergePasses.tripId,
+      purchasedAt: conciergePasses.purchasedAt,
+      endsAt: trips.endsAt,
+    })
+    .from(conciergePasses)
+    .innerJoin(trips, eq(conciergePasses.tripId, trips.id))
+    .where(eq(conciergePasses.userId, userId));
+
+  return new Map(
+    rows.map((row) => [
+      row.tripId,
+      { from: row.purchasedAt, to: endOfTripDay(row.endsAt) },
+    ]),
+  );
+}
+
+/**
+ * Was this action paid for by a pass?
+ *
+ * Only between the moment the pass was bought and the day the trip ends, so
+ * a pass cannot retroactively cover what happened before it.
+ */
+export function isCovered(
+  coverage: Coverage,
+  tripId: number | null,
+  at: Date,
+): boolean {
+  if (tripId === null) return false;
+  const window = coverage.get(tripId);
+  if (!window) return false;
+  return at >= window.from && at <= window.to;
+}
+
 /**
  * Everything the app needs to know about what a person may do.
  *
@@ -137,20 +176,16 @@ export async function getEntitlement(userId: number): Promise<Entitlement> {
     );
 
   // Actions on a pass-covered trip never count against a membership
-  // allowance (D5). "Covered" means after the pass was bought and before the
-  // trip ended, so a pass does not retroactively pay for earlier actions.
-  const coverage = new Map(
+  // allowance (D5).
+  const coverage: Coverage = new Map(
     passRows.map((row) => [
       row.tripId,
       { from: row.purchasedAt, to: endOfTripDay(row.endsAt) },
     ]),
   );
-  const actionsUsed = actions.filter((action) => {
-    if (action.tripId === null) return true;
-    const window = coverage.get(action.tripId);
-    if (!window) return true;
-    return action.occurredAt < window.from || action.occurredAt > window.to;
-  }).length;
+  const actionsUsed = actions.filter(
+    (action) => !isCovered(coverage, action.tripId, action.occurredAt),
+  ).length;
 
   const actionsAllowed = ALLOWANCE[plan];
 

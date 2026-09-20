@@ -14,6 +14,12 @@ export function monthBounds(year: number, month: number) {
 // first, with the trip's destination when there is one.
 export function listTransactionsForMonth(userId: number, year: number, month: number) {
   const { start, end } = monthBounds(year, month);
+  return listTransactionsBetween(userId, start, end);
+}
+
+// The same, over any window: a billing period rather than a calendar month.
+// [start, end).
+export function listTransactionsBetween(userId: number, start: Date, end: Date) {
   return db
     .select({
       id: agentTransactions.id,
