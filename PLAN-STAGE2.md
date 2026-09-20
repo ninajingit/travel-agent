@@ -142,18 +142,23 @@ Commit prefix `pay(NN)`. One concern per commit; stop for review after each.
 
 ## Phase B: Mira charges the card for what it books
 
-Deferred until Phase A ships and is decided separately (D10). This is the
-"two shapes of money on one customer" problem: a membership invoice and
-agent-initiated variable charges, on one saved card, in one readable history.
+Decided on 2026-09-20, after Phase A shipped. This is the "two shapes of
+money on one customer" problem: a membership invoice and agent-initiated
+variable charges, on one saved card, in one readable history.
+
+It is also where the persona's stated company-ending risk lives. An agent
+with a card on file that charges $340 nobody can account for is the failure
+mode; every decision below is chosen against it.
 
 | # | Commit | Gate |
 |---|--------|------|
-| 51 | Checkout saves the card for later off-session use; consent copy says Mira will charge it for bookings inside your caps | payment method attached to the customer |
-| 52 | `recordTransaction` charges an off-session PaymentIntent for the booking amount, stores `stripe_payment_intent_id`; a card that needs authentication produces a message with a link rather than a silent failure | charge appears on the customer; 3DS test card produces the message |
-| 53 | cancellations refund | refund appears in Stripe |
-| 54 | membership page shows one history: invoices and booking charges together | matches Stripe |
+| 51 | CLAUDE.md Phase B rules replace the "deferred, do not build toward it" rule; this plan records the decisions | docs only |
+| 52 | Checkout saves the card for later off-session use; consent copy says Mira will charge it for bookings inside your caps | payment method attached to the customer |
+| 53 | `recordTransaction` charges an off-session PaymentIntent for the booking amount, stores `stripe_payment_intent_id`; a card that needs authentication produces a message with a link rather than a silent failure | charge appears on the customer; 3DS test card produces the message |
+| 54 | cancellations refund | refund appears in Stripe |
+| 55 | membership page shows one history: invoices and booking charges together | matches Stripe |
 
-Note for commit 51: subscription-mode Checkout already saves the card for
+Note for commit 52: subscription-mode Checkout already saves the card for
 subsequent invoices. Charging it for a booking is a different purpose, so it
 needs its own consent, not a reuse of the subscription mandate.
 
@@ -228,6 +233,10 @@ route that does not exist until commit 38; Stripe retries, and that is fine.
 | D22 | Statement descriptor | `LLAMA INC` with dynamic suffix `MIRA`. |
 | D23 | Customer model | Customers v1. Accounts v2 is still preview for non-Connect accounts. |
 | D24 | Stripe Invoicing | Unused. Subscription invoices come from Billing; there is no manual-invoice flow in Stage 2. |
+| D10 (settled) | Phase B | Build it, commits 51-55, decided 2026-09-20 after Phase A shipped. |
+| D26 | The spending caps were never enforced | Phase B enforces them, and enforces them by **asking**, not refusing. The pricing page says spending "never goes past the caps you set" and settings calls them "the most Mira may spend without asking first", so over a cap the agent describes the booking and waits for a yes. Refusing would be stricter than the copy promises and worse mid-trip. Worth stating plainly: through all of Stage 1 and Phase A these caps were decoration. Nothing compared a booking to them. The scripted $1,368 booking is already over the $500 default. |
+| D27 | Consent to charge for bookings | Custom consent text on the Checkout page covering what Mira will charge, how the amount is decided, and the caps, plus `users.booking_consent_at` recording when they agreed. Stripe requires a record of the agreement kept. The subscription mandate is not reused: a membership charge and a flight charge are different purposes and the card networks treat them that way. |
+| D28 | A booking whose charge fails | Charge first, book only once it clears. A card needing authentication produces a message with a link, and the booking happens when it clears. Slower than booking first, but there is never a booking nobody paid for, and never a silent failure. |
 | D25 | Is Free a $0 subscription? | No. Free is the absence of a subscription. Tried the other way on 2026-09-19 and backed out the same hour: a $0 subscription puts Stripe in the signup path for people who pay nothing, counts every free signup as a new subscriber and every abandonment as churn in the numbers the board reads, and breaks the one-call hosted Checkout upgrade because Checkout creates a subscription rather than changing one. The Free product and price are archived in the sandbox. |
 
 ## Definition of done, Phase A

@@ -10,14 +10,14 @@ awareness. Do not reopen it.
 
 ## Current stage
 
-**Stage 2: payments with Stripe, Phase A. Commits 33 onward.**
+**Stage 2: payments with Stripe, Phase B. Commits 52 onward.**
 
 Stage 1 built the product with no billing awareness, commits 1 through 31.
-Stage 2 retrofits memberships (Plus, Pro), a one-off Concierge Pass, a
-ten-day Pro trial, and the gates that make the pricing page true.
+Phase A retrofitted memberships, the Concierge Pass, the ten-day Pro trial,
+and the gates that make the pricing page true, commits 33 to 50.
 
-Phase B, where Mira charges the card for what it books, is deferred. Do not
-build toward it.
+Phase B is the dangerous half: Mira charges the saved card for the flights
+and hotels it books. Decided 2026-09-20.
 
 ## Hard rules
 
@@ -42,6 +42,21 @@ build toward it.
   checked in, never logged, never sent to the client.
 - **The webhook is idempotent.** Every event id is stored before it is
   handled. Replaying an event changes nothing.
+- **Nothing is charged over a cap.** The per-booking, per-trip, and monthly
+  caps in `agent_settings` are the most Mira may spend without asking. Over
+  any of them, the agent describes the booking and waits for a yes. They are
+  checked before the charge, every time, with no exceptions for a retry or a
+  rebook.
+- **Consent before the first booking charge.** Charging the card for a flight
+  is a different purpose from charging it for a membership, and needs its own
+  agreement, recorded with a timestamp. Never reuse the subscription mandate.
+- **The money moves before the booking exists.** An off-session charge that
+  fails, or that needs authentication, stops the booking. Mira says so and
+  sends a link. There is never a booking nobody paid for, and never a silent
+  failure.
+- **Every charge has a row.** One `agent_transactions` row per charge,
+  carrying its `stripe_payment_intent_id`. A charge the activity page cannot
+  explain is the failure this whole stage exists to avoid.
 - **One concern per commit.** Stop after each commit and wait for review
   before starting the next.
 - Do not look ahead in the plan. Execute the commit you are on.
