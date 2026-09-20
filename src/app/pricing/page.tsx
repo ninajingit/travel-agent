@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { MarketingShell } from "@/components/marketing-shell";
-import { Card } from "@/components/ui";
+import { AutoStart, StartButton } from "@/components/pricing-actions";
+import { Card, ButtonLink, Pill } from "@/components/ui";
+import { ensureUser } from "@/lib/auth";
+import { getEntitlement } from "@/lib/billing/entitlement";
 
 export const metadata: Metadata = {
   title: "Pricing · Mira",
   description: "Planning and inspiration are free. Pay when Mira books and watches for you.",
 };
 
-// Static copy. Nothing on this page reads data, checks who you are, or does
-// anything when clicked.
+// The copy is still the promise; now the buttons keep it. Signed out, a
+// choice survives the trip through sign-in via ?start=. Signed in, the card
+// you are already on says so instead of selling it to you again.
 const OFFERS = [
   {
     name: "Free",
@@ -59,9 +65,22 @@ const OFFERS = [
   },
 ];
 
-export default function PricingPage() {
+function isOffer(value: unknown): value is "plus" | "pro" {
+  return value === "plus" || value === "pro";
+}
+
+export default async function PricingPage({ searchParams }: PageProps<"/pricing">) {
+  const { userId } = await auth();
+  const signedIn = Boolean(userId);
+  const entitlement = signedIn ? await getEntitlement((await ensureUser()).id) : null;
+  const currentPlan = entitlement?.plan ?? null;
+  const subscribed = currentPlan === "plus" || currentPlan === "pro";
+
+  const requested = (await searchParams).start;
+  const resuming = signedIn && !subscribed && isOffer(requested) ? requested : null;
+
   return (
-    <MarketingShell>
+    <MarketingShell signedIn={signedIn}>
       <section className="py-16 sm:py-20">
         <h1 className="max-w-2xl font-display text-5xl font-bold tracking-tight sm:text-6xl">
           Planning is free. Pay when Mira does the work.
@@ -71,6 +90,7 @@ export default function PricingPage() {
           rooms, tickets, is separate, is always shown before it happens, and
           never goes past the caps you set.
         </p>
+        {resuming && <AutoStart offer={resuming} />}
       </section>
 
       <section className="grid gap-4 pb-20 lg:grid-cols-4">
@@ -90,6 +110,14 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
+            <div className="mt-6">
+              <OfferAction
+                offer={offer}
+                signedIn={signedIn}
+                currentPlan={currentPlan}
+                subscribed={subscribed}
+              />
+            </div>
           </Card>
         ))}
       </section>
@@ -120,14 +148,82 @@ export default function PricingPage() {
             </dd>
           </div>
           <div>
-            <dt className="font-semibold">Is this available now?</dt>
+            <dt className="font-semibold">Can I change or cancel later?</dt>
             <dd className="mt-1 text-muted">
-              Mira is in a closed pilot. Members pay per booking for now;
-              memberships open with the next release.
+              Any time, from Membership. Moving up takes effect at once. Moving
+              down or cancelling takes effect at the end of the period you have
+              already paid for, so nothing you are using disappears mid-trip.
             </dd>
           </div>
         </dl>
       </section>
     </MarketingShell>
+  );
+}
+
+type Offer = (typeof OFFERS)[number];
+
+// What the card offers depends on where the reader already stands.
+function OfferAction({
+  offer,
+  signedIn,
+  currentPlan,
+  subscribed,
+}: {
+  offer: Offer;
+  signedIn: boolean;
+  currentPlan: string | null;
+  subscribed: boolean;
+}) {
+  const key = offer.name.toLowerCase();
+
+  if (key === "free") {
+    return currentPlan === "free" ? (
+      <Pill>Your plan</Pill>
+    ) : (
+      <p className="text-sm text-muted">Included with every account.</p>
+    );
+  }
+
+  if (key === "concierge pass") {
+    return signedIn ? (
+      <ButtonLink href="/app/trips" variant="secondary" className="w-full">
+        Pick a trip
+      </ButtonLink>
+    ) : (
+      <ButtonLink href="/sign-in" variant="secondary" className="w-full">
+        Sign in to buy
+      </ButtonLink>
+    );
+  }
+
+  if (currentPlan === key) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Pill tone="accent">Your plan</Pill>
+        <Link href="/app/membership" className="text-sm text-muted underline hover:text-fg">
+          Manage membership
+        </Link>
+      </div>
+    );
+  }
+
+  // Already paying for the other one: this is a plan change, which belongs in
+  // the portal rather than a second checkout.
+  if (subscribed) {
+    return (
+      <ButtonLink href="/app/membership" variant="secondary" className="w-full">
+        Switch to {offer.name}
+      </ButtonLink>
+    );
+  }
+
+  return (
+    <StartButton
+      offer={key as "plus" | "pro"}
+      label={`Start ${offer.name}`}
+      signedIn={signedIn}
+      variant={offer.name === "Pro" ? "primary" : "secondary"}
+    />
   );
 }
