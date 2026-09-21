@@ -7,6 +7,8 @@ import { Card, ButtonLink, Pill } from "@/components/ui";
 import { ensureUser } from "@/lib/auth";
 import { getEntitlement } from "@/lib/billing/entitlement";
 import { TRIAL_DAYS } from "@/lib/billing/checkout";
+import { localPrices, resolveCurrency } from "@/lib/billing/locale";
+import { LocalPriceLine, LocalPriceNote } from "@/components/local-price";
 
 export const metadata: Metadata = {
   title: "Pricing · Mira",
@@ -19,6 +21,7 @@ export const metadata: Metadata = {
 const OFFERS = [
   {
     name: "Free",
+    cents: 0,
     price: "$0",
     cadence: "",
     summary: "Planning and inspiration.",
@@ -31,6 +34,7 @@ const OFFERS = [
   },
   {
     name: "Plus",
+    cents: 2900,
     price: "$29",
     cadence: "per month",
     summary: "Booking and monitoring for the regular traveller.",
@@ -43,6 +47,7 @@ const OFFERS = [
   },
   {
     name: "Pro",
+    cents: 9900,
     price: "$99",
     cadence: "per month",
     summary: "The proactive concierge, for people who fly every month.",
@@ -55,6 +60,7 @@ const OFFERS = [
   },
   {
     name: "Concierge Pass",
+    cents: 15000,
     price: "$150",
     cadence: "per trip",
     summary: "Everything in Pro, for one trip, without a membership.",
@@ -81,6 +87,14 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
   const currentPlan = entitlement?.plan ?? null;
   const subscribed = currentPlan === "plus" || currentPlan === "pro";
 
+  // One mirror read for the whole page. Free is left out: nought is nought
+  // in every currency and "about ￥0" is noise.
+  const { currency, source } = await resolveCurrency();
+  const local = await localPrices(
+    OFFERS.map((o) => o.cents).filter((c) => c > 0),
+    currency,
+  );
+
   const requested = (await searchParams).start;
   const resuming = signedIn && !subscribed && isOffer(requested) ? requested : null;
 
@@ -95,6 +109,7 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
           rooms, tickets, is separate, is always shown before it happens, and
           never goes past the caps you set.
         </p>
+        {local && currency && <LocalPriceNote currency={currency} source={source} />}
         {resuming && <AutoStart offer={resuming} />}
       </section>
 
@@ -106,6 +121,7 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
               <span className="font-display text-4xl font-bold">{offer.price}</span>
               {offer.cadence && <span className="text-sm text-muted">{offer.cadence}</span>}
             </div>
+            <LocalPriceLine price={local?.get(offer.cents) ?? null} cadence={offer.cadence} />
             {offer.name === "Pro" && trialOffered && !subscribed && (
               <p className="mt-2 text-sm font-semibold text-accent">
                 First {TRIAL_DAYS} days free
