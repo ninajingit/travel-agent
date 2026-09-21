@@ -166,10 +166,29 @@ USD.
 | `pay(66)` | work out the visitor's currency from country, with a cookie override |
 | `pay(67)` | show the local estimate under the USD price |
 | `pay(68)` | the currency dropdown |
-| `pay(69)` | charge in the chosen currency, per D43 |
+| `pay(69)` | a tool to preview Adaptive Pricing from any country |
 
-Commits 63 to 68 are the same whichever way D43 goes. Only 69 depends on it,
-so the decision does not block the start.
+Commits 63 to 68 are the same whichever way D43 goes.
+
+Commit 69 was meant to be "charge in the chosen currency". Under D43 there
+is nothing to build. Adaptive Pricing picks the presentment currency from
+the customer's location, not from our cookie, and Checkout rejects a
+currency we try to pass on a dollar-only price:
+
+```
+POST /v1/checkout/sessions  currency=eur
+  -> The price specified only supports `usd`.
+```
+
+So the dropdown is a preview and stays one. Someone in the United States
+who picks Japan sees yen on our page and is charged dollars at checkout.
+The control says "show prices for" and the note says Stripe charges in your
+own currency, so the copy holds, but the limit is real and belongs in the
+log: we can localise the shop window and not the till.
+
+Commit 69 became the tool we needed instead. There is no way to see what
+Adaptive Pricing charges without building a session and opening it, so
+`stripe:preview` builds them for any country you name.
 
 ## Decisions
 
