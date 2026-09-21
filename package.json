@@ -18,6 +18,8 @@
     "stripe:trial-check": "tsx --env-file=.env.local scripts/stripe-trial-check.ts",
     "stripe:fx-check": "tsx --env-file=.env.local scripts/stripe-fx-check.ts",
     "stripe:preview": "tsx --env-file=.env.local scripts/stripe-preview.ts",
+    "stripe:migration-links": "tsx --env-file=.env.local scripts/migration-links.ts",
+    "stripe:migration-check": "tsx --env-file=.env.local scripts/migration-check.ts",
     "locale:check": "tsx --env-file=.env.local scripts/locale-check.ts",
     "demo:tier-check": "tsx --env-file=.env.local scripts/demo-tier-check.ts"
   },
