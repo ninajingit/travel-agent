@@ -9,6 +9,7 @@ import {
 } from "@/db/schema";
 import { refreshDemoForPlan } from "@/lib/demo/tier";
 import { LOOKUP_KEYS } from "./catalog";
+import { refreshCatalogPrices } from "./prices";
 import { stripe } from "./stripe";
 
 // Keys the checkout route writes onto Checkout Sessions and subscriptions so
@@ -269,6 +270,17 @@ export async function handleEvent(event: Stripe.Event) {
     case "invoice.paid":
     case "invoice.payment_failed":
       await handleInvoice(event.data.object);
+      return;
+
+    // Someone changed a price in the Dashboard. Re-read the whole catalog
+    // rather than patching the one object in the event: "adjusting a price"
+    // archives one price and creates another, so the interesting change is
+    // which price a lookup key now points at, and that is not in the payload.
+    case "price.created":
+    case "price.updated":
+    case "price.deleted":
+    case "product.updated":
+      await refreshCatalogPrices();
       return;
 
     default:

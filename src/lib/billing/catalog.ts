@@ -51,9 +51,22 @@ const ALL_LOOKUP_KEYS = Object.values(LOOKUP_KEYS);
 let cached: Map<LookupKey, string> | null = null;
 
 /**
+ * Throw away the cached price ids.
+ *
+ * Called when Stripe says a price changed. Without this the site would show
+ * the new price and charge the old one until the next deploy, which is a
+ * worse bug than the one the mirror was built to fix: at least a stale page
+ * and a stale checkout agreed with each other.
+ */
+export function forgetPrices() {
+  cached = null;
+}
+
+/**
  * Price ids for every lookup key, fetched once per server process. Prices are
  * immutable in Stripe and the catalog changes about once a year, so re-reading
- * them on every checkout would be a round trip for nothing. A deploy clears it.
+ * them on every checkout would be a round trip for nothing. A deploy clears
+ * it, and so does forgetPrices() when a price event arrives.
  */
 export async function resolvePrices(): Promise<Map<LookupKey, string>> {
   if (cached) return cached;

@@ -85,6 +85,13 @@
       "when": 1789946584583,
       "tag": "0011_fx_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789955461029,
+      "tag": "0012_catalog_prices",
+      "breakpoints": true
     }
   ]
 }

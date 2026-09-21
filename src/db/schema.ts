@@ -289,3 +289,30 @@ export const fxRates = pgTable(
   // twice in the same minute leaves one row rather than two.
   (table) => [uniqueIndex("fx_rates_currency_key").on(table.currency)],
 );
+
+// What each thing we sell costs, copied from Stripe. Written by the webhook
+// when a price changes and by a nightly job as a safety net; read by every
+// page and every sentence that quotes a number.
+//
+// Here because a page may not call Stripe, and because the alternative is
+// what we had: the same figure typed into seven files and a Dashboard, with
+// nothing to notice when they stopped agreeing.
+//
+// Keyed by lookup key, not price id. Stripe prices are immutable, so changing
+// what something costs means creating a new price and moving the lookup key
+// onto it. The key is the stable name; the id underneath it is not.
+export const catalogPrices = pgTable("catalog_prices", {
+  id: serial("id").primaryKey(),
+  lookupKey: text("lookup_key").notNull().unique(),
+  stripePriceId: text("stripe_price_id").notNull(),
+  productName: text("product_name").notNull(),
+  unitAmount: integer("unit_amount").notNull(),
+  currency: text("currency").notNull(),
+  // "month" for a membership, null for the one-off pass. Drives the "per
+  // month" beside the figure, so that cannot drift either.
+  interval: text("interval"),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+

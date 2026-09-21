@@ -8,6 +8,7 @@ import { ensureUser } from "@/lib/auth";
 import { getEntitlement } from "@/lib/billing/entitlement";
 import { TRIAL_DAYS } from "@/lib/billing/checkout";
 import { localPrices, resolveCurrency } from "@/lib/billing/locale";
+import { cadenceFor, formatPrice, getPrices } from "@/lib/billing/prices";
 import { LocalPriceLine, LocalPriceNote } from "@/components/local-price";
 import { CurrencyPicker } from "@/components/currency-picker";
 import { DOLLARS_ONLY } from "@/lib/billing/currencies";
@@ -23,9 +24,6 @@ export const metadata: Metadata = {
 const OFFERS = [
   {
     name: "Free",
-    cents: 0,
-    price: "$0",
-    cadence: "",
     summary: "Planning and inspiration.",
     details: [
       "Ask Mira to plan anything, as often as you like.",
@@ -36,9 +34,6 @@ const OFFERS = [
   },
   {
     name: "Plus",
-    cents: 2900,
-    price: "$29",
-    cadence: "per month",
     summary: "Booking and monitoring for the regular traveller.",
     details: [
       "Everything in Free.",
@@ -49,9 +44,6 @@ const OFFERS = [
   },
   {
     name: "Pro",
-    cents: 9900,
-    price: "$99",
-    cadence: "per month",
     summary: "The proactive concierge, for people who fly every month.",
     details: [
       "Everything in Plus.",
@@ -62,9 +54,6 @@ const OFFERS = [
   },
   {
     name: "Concierge Pass",
-    cents: 15000,
-    price: "$150",
-    cadence: "per trip",
     summary: "Everything in Pro, for one trip, without a membership.",
     details: [
       "Booking, monitoring, and auto-rebook from the day you buy it until you are home.",
@@ -89,11 +78,18 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
   const currentPlan = entitlement?.plan ?? null;
   const subscribed = currentPlan === "plus" || currentPlan === "pro";
 
+  // Prices come from Stripe by way of the mirror, so changing one in the
+  // Dashboard changes it here. Free has no Stripe price and never will; it
+  // is the absence of a subscription, not a product.
+  const prices = await getPrices();
+  const amountFor = (name: string) =>
+    name === "Plus" ? prices.plus : name === "Pro" ? prices.pro : name === "Concierge Pass" ? prices.pass : null;
+
   // One mirror read for the whole page. Free is left out: nought is nought
   // in every currency and "about ￥0" is noise.
   const { currency, source } = await resolveCurrency();
   const local = await localPrices(
-    OFFERS.map((o) => o.cents).filter((c) => c > 0),
+    [prices.plus.unitAmount, prices.pro.unitAmount, prices.pass.unitAmount],
     currency,
   );
 
@@ -119,14 +115,18 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
       </section>
 
       <section className="grid gap-4 pb-20 lg:grid-cols-4">
-        {OFFERS.map((offer) => (
+        {OFFERS.map((offer) => {
+          const priced = amountFor(offer.name);
+          const amount = priced ? formatPrice(priced) : "$0";
+          const cadence = priced ? cadenceFor(priced) : "";
+          return (
           <Card key={offer.name} className={`p-6 ${offer.name === "Pro" ? "border-accent" : ""}`}>
             <h2 className="font-display text-2xl font-bold">{offer.name}</h2>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="font-display text-4xl font-bold">{offer.price}</span>
-              {offer.cadence && <span className="text-sm text-muted">{offer.cadence}</span>}
+              <span className="font-display text-4xl font-bold">{amount}</span>
+              {cadence && <span className="text-sm text-muted">{cadence}</span>}
             </div>
-            <LocalPriceLine price={local?.get(offer.cents) ?? null} cadence={offer.cadence} />
+            <LocalPriceLine price={priced ? (local?.get(priced.unitAmount) ?? null) : null} cadence={cadence} />
             {offer.name === "Pro" && trialOffered && !subscribed && (
               <p className="mt-2 text-sm font-semibold text-accent">
                 First {TRIAL_DAYS} days free
@@ -151,7 +151,8 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
               />
             </div>
           </Card>
-        ))}
+          );
+        })}
       </section>
 
       <section className="pb-20">
