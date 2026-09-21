@@ -9,6 +9,8 @@ import { getEntitlement } from "@/lib/billing/entitlement";
 import { TRIAL_DAYS } from "@/lib/billing/checkout";
 import { localPrices, resolveCurrency } from "@/lib/billing/locale";
 import { LocalPriceLine, LocalPriceNote } from "@/components/local-price";
+import { CurrencyPicker } from "@/components/currency-picker";
+import { DOLLARS_ONLY } from "@/lib/billing/currencies";
 
 export const metadata: Metadata = {
   title: "Pricing · Mira",
@@ -101,6 +103,9 @@ export default async function PricingPage({ searchParams }: PageProps<"/pricing"
   return (
     <MarketingShell signedIn={signedIn}>
       <section className="py-16 sm:py-20">
+        <div className="mb-8 flex justify-end">
+          <CurrencyPicker current={currency?.code ?? DOLLARS_ONLY} />
+        </div>
         <h1 className="max-w-2xl font-display text-5xl font-bold tracking-tight sm:text-6xl">
           Planning is free. Pay when Mira does the work.
         </h1>

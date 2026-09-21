@@ -2,25 +2,8 @@ import { eq } from "drizzle-orm";
 import { cookies, headers } from "next/headers";
 import { db } from "@/db";
 import { fxRates } from "@/db/schema";
-import { QUOTED, type Quoted, quotedByCode, quotedForCountry } from "./currencies";
+import { CURRENCY_COOKIE, DOLLARS_ONLY, type Quoted, quotedByCode, quotedForCountry } from "./currencies";
 import { estimateLocal, isStale } from "./fx";
-
-/**
- * Where a visitor's own choice of currency is kept.
- *
- * A cookie rather than a query string, so the choice survives moving between
- * pages, and rather than the user row, so it works before anyone signs in,
- * which is where the pricing page lives.
- */
-export const CURRENCY_COOKIE = "mira_currency";
-
-/**
- * The cookie value meaning "dollars are fine, stop converting".
- *
- * Needed as a distinct value: an absent cookie means we have not been told,
- * and should guess from the country. This means we have been told.
- */
-export const DOLLARS_ONLY = "usd";
 
 /**
  * The country Vercel worked out from the request, or null anywhere else.
@@ -146,9 +129,3 @@ export function formatLocal(amount: number, currency: Quoted) {
     currency: currency.code.toUpperCase(),
   }).format(amount);
 }
-
-/** Everything the dropdown needs, dollars first because dollars is the price. */
-export const CURRENCY_OPTIONS = [
-  { value: DOLLARS_ONLY, label: "United States" },
-  ...QUOTED.map((c) => ({ value: c.code, label: c.label })),
-];

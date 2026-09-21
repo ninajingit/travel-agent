@@ -10,10 +10,9 @@
 // number of decimal places.
 //
 //   npm run locale:check
-import { QUOTED, quotedByCode, quotedForCountry } from "@/lib/billing/currencies";
+import { DOLLARS_ONLY, QUOTED, quotedByCode, quotedForCountry } from "@/lib/billing/currencies";
 import { estimateLocal } from "@/lib/billing/fx";
 import {
-  DOLLARS_ONLY,
   countryFromAcceptLanguage,
   formatLocal,
   localPrice,

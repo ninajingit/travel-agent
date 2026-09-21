@@ -9,6 +9,27 @@
 /** What we price and settle in. Never converted, never estimated. */
 export const BASE_CURRENCY = "usd";
 
+/**
+ * Where a visitor's own choice of currency is kept.
+ *
+ * A cookie rather than a query string, so the choice survives moving between
+ * pages, and rather than the user row, so it works before anyone signs in,
+ * which is where the pricing page lives.
+ *
+ * Lives here rather than next to the code that reads it, because the
+ * dropdown that writes it runs in the browser and must not drag the server
+ * half of this in with it.
+ */
+export const CURRENCY_COOKIE = "mira_currency";
+
+/**
+ * The cookie value meaning "dollars are fine, stop converting".
+ *
+ * Needed as a distinct value: an absent cookie means we have not been told
+ * and should guess from the country. This means we have been told.
+ */
+export const DOLLARS_ONLY = "usd";
+
 export type Quoted = {
   /** ISO 4217, lower case, the way Stripe writes it. */
   code: string;
@@ -41,3 +62,9 @@ export function quotedByCode(code: string | null | undefined) {
   const lower = code.toLowerCase();
   return QUOTED.find((c) => c.code === lower) ?? null;
 }
+
+/** Everything the dropdown needs, dollars first because dollars is the price. */
+export const CURRENCY_OPTIONS = [
+  { value: DOLLARS_ONLY, label: "United States" },
+  ...QUOTED.map((c) => ({ value: c.code, label: c.label })),
+];
