@@ -35,17 +35,25 @@ export type Quoted = {
   code: string;
   /** ISO 3166-1 alpha-2. The country whose visitors get this by default. */
   country: string;
-  /** What the dropdown says. A place, not a currency code. */
+  /**
+   * The place. Used when explaining why we guessed this currency, never in
+   * the picker: "You look like you are in Japan".
+   */
   label: string;
+  /**
+   * The money. Used in the picker, because that is what someone is
+   * choosing: "Japanese yen", not "Japan" and not "JPY".
+   */
+  currencyName: string;
   /** Passed to Intl.NumberFormat, which knows JPY and KRW have no decimals. */
   locale: string;
 };
 
 export const QUOTED: readonly Quoted[] = [
-  { code: "jpy", country: "JP", label: "Japan", locale: "ja-JP" },
-  { code: "krw", country: "KR", label: "South Korea", locale: "ko-KR" },
-  { code: "brl", country: "BR", label: "Brazil", locale: "pt-BR" },
-  { code: "dkk", country: "DK", label: "Denmark", locale: "da-DK" },
+  { code: "jpy", country: "JP", label: "Japan", currencyName: "Japanese yen", locale: "ja-JP" },
+  { code: "krw", country: "KR", label: "South Korea", currencyName: "Korean won", locale: "ko-KR" },
+  { code: "brl", country: "BR", label: "Brazil", currencyName: "Brazilian real", locale: "pt-BR" },
+  { code: "dkk", country: "DK", label: "Denmark", currencyName: "Danish krone", locale: "da-DK" },
 ];
 
 export const QUOTED_CODES = QUOTED.map((c) => c.code);
@@ -65,6 +73,6 @@ export function quotedByCode(code: string | null | undefined) {
 
 /** Everything the dropdown needs, dollars first because dollars is the price. */
 export const CURRENCY_OPTIONS = [
-  { value: DOLLARS_ONLY, label: "United States" },
-  ...QUOTED.map((c) => ({ value: c.code, label: c.label })),
+  { value: DOLLARS_ONLY, label: "US dollars" },
+  ...QUOTED.map((c) => ({ value: c.code, label: c.currencyName })),
 ];

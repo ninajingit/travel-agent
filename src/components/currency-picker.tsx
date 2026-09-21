@@ -24,7 +24,7 @@ export function CurrencyPicker({ current }: { current: string }) {
 
   return (
     <label className="flex items-center gap-2 text-sm text-muted">
-      <span>Show prices for</span>
+      <span>Show prices in</span>
       <select
         value={current}
         disabled={pending}

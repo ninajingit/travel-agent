@@ -44,8 +44,8 @@ export function LocalPriceNote({
   return (
     <p className="mt-4 max-w-xl text-sm text-muted">
       {source === "chosen"
-        ? `Showing estimates for ${currency.label}. `
-        : `You look like you are in ${currency.label}, so there is an estimate under each price. `}
+        ? `Showing estimates in ${currency.currencyName}. `
+        : `You look like you are in ${currency.label}, so there is an estimate in ${currency.currencyName} under each price. `}
       The price is the dollar figure. At checkout Stripe converts it and charges
       you in your own currency at its rate that day, so the exact amount will
       differ a little from ours and will move month to month. You can choose to

@@ -10,7 +10,13 @@
 // number of decimal places.
 //
 //   npm run locale:check
-import { DOLLARS_ONLY, QUOTED, quotedByCode, quotedForCountry } from "@/lib/billing/currencies";
+import {
+  CURRENCY_OPTIONS,
+  DOLLARS_ONLY,
+  QUOTED,
+  quotedByCode,
+  quotedForCountry,
+} from "@/lib/billing/currencies";
 import { estimateLocal } from "@/lib/billing/fx";
 import {
   countryFromAcceptLanguage,
@@ -54,6 +60,22 @@ async function main() {
   check("France gets no conversion, we do not quote euros", quotedForCountry("FR") === null);
   check("an unknown country gets no conversion", quotedForCountry("ZZ") === null);
   check("a null country gets no conversion", quotedForCountry(null) === null);
+
+  // --- what the picker says ---
+  // The picker names money and the note names places. Mixing them produces
+  // "You look like you are in Japanese yen", which is how this went wrong
+  // the first time.
+  const optionLabels = CURRENCY_OPTIONS.map((o) => o.label);
+  check(
+    `the picker lists currencies, not countries (${optionLabels.join(", ")})`,
+    QUOTED.every((c) => optionLabels.includes(c.currencyName)) &&
+      QUOTED.every((c) => !optionLabels.includes(c.label)),
+  );
+  check(
+    "dollars is first and is not one of the quoted currencies",
+    CURRENCY_OPTIONS[0].value === DOLLARS_ONLY &&
+      !QUOTED.some((c) => c.code === CURRENCY_OPTIONS[0].value),
+  );
 
   // --- cookie values ---
   check("a known cookie resolves", quotedByCode("jpy")?.country === "JP");
