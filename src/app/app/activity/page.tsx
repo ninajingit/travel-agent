@@ -67,11 +67,12 @@ export default async function ActivityPage({ searchParams }: PageProps<"/app/act
       ? "This period"
       : formatMonth(window.start.getUTCFullYear(), window.start.getUTCMonth() + 1);
 
-  const previousMonth = shiftMonth(
-    window.start.getUTCFullYear(),
-    window.start.getUTCMonth() + 1,
-    -1,
-  );
+  // The month holding the day before this window began. For a calendar month
+  // that is simply the month before. For a billing period that renews
+  // mid-month it is the same month, so the days between the first and the
+  // renewal date are one click away rather than reachable from nowhere.
+  const dayBefore = new Date(window.start.getTime() - 1);
+  const previousMonth = monthKey(dayBefore.getUTCFullYear(), dayBefore.getUTCMonth() + 1);
 
   return (
     <div>
@@ -181,7 +182,6 @@ function parseMonth(raw: string) {
   return month >= 1 && month <= 12 ? { year, month } : null;
 }
 
-function shiftMonth(year: number, month: number, by: number) {
-  const d = new Date(Date.UTC(year, month - 1 + by, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+function monthKey(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
