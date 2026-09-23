@@ -22,7 +22,8 @@
     "stripe:migration-links": "tsx --env-file=.env.local scripts/migration-links.ts",
     "stripe:migration-check": "tsx --env-file=.env.local scripts/migration-check.ts",
     "locale:check": "tsx --env-file=.env.local scripts/locale-check.ts",
-    "demo:tier-check": "tsx --env-file=.env.local scripts/demo-tier-check.ts"
+    "demo:tier-check": "tsx --env-file=.env.local scripts/demo-tier-check.ts",
+    "test:accounts": "tsx --env-file=.env.local scripts/test-accounts.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.9.4",
